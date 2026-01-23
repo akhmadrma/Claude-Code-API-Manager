@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "capim (Cloude Code API Manager)"
+version = "1.0.0"
+description = "Interactive CLI tool for managing API keys with beautiful terminal UI"
+authors = ["akhmadrma"]
+readme = "README.md"
+license = "MIT"
+packages = [
+    { include = "cli" },
+    { include = "core" },
+    { include = "storage" },
+    { include = "ui" },
+    { include = "utils" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+typer = { version = "^0.12.0", extras = ["all"] }
+rich = "^13.7.0"
+questionary = "^2.0.0"
+python-dotenv = "^1.0.0"
+pydantic = "^2.5.0"
+cryptography = "^42.0.0"
+pyperclip = "^1.8.2"
+
+[tool.poetry.scripts]
+capi = "cli.main:app"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+black = "^24.0.0"
+ruff = "^0.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
