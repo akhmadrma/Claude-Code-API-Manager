@@ -29,9 +29,9 @@ def version():
 
 
 # Register commands
-app.command()(add_cmd)
-app.command()(list_cmd)
-app.command()(delete_cmd)
+app.command("add")(add_cmd)
+app.command("list")(list_cmd)
+app.command("delete")(delete_cmd)
 app.command("validate")(validate_cmd)
 
 

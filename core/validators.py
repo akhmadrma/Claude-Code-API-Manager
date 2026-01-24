@@ -1,9 +1,12 @@
 """API key format validators for different services."""
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import  Dict, Any, TypedDict, NotRequired
+
+from dotenv import load_dotenv
 
 
 class EnvironmentVariables(TypedDict):
@@ -104,8 +107,9 @@ class KeyValidator:
 
 class ConfigValidator:
     """Validator for Claude Code settings.json configuration."""
+    load_dotenv(Path(__file__).parent.parent / ".env")
 
-    DEFAULT_CLAUDE_DIR = Path.home() / ".claude"
+    DEFAULT_CLAUDE_DIR = Path.home() / os.getenv("DEFAULT_CLAUDE_DIR", "test")
     SETTINGS_FILE = "settings.json"
     SETTINGS_EXAMPLE = "settings.example.json"
 
@@ -156,12 +160,6 @@ class ConfigValidator:
         if not cls.is_claude_installed():
             return False, f"Claude Code directory not found at {cls.get_claude_dir()}"
 
-        if not cls.settings_exists():
-            example_path = cls.get_claude_dir() / cls.SETTINGS_EXAMPLE
-            if example_path.exists():
-                return False, f"Settings file not found. Example exists at {example_path}"
-            return False, f"Settings file not found at {cls.get_settings_path()}"
-
         return True, "Claude Code installation valid"
 
     @classmethod
@@ -178,7 +176,7 @@ class ConfigValidator:
         settings_path = cls.get_settings_path()
 
         if not settings_path.exists():
-            raise ValidationError(f"Settings file not found: {settings_path}", "config")
+            raise ValidationError(f"Settings file not found: {str(settings_path)}", "config")
 
         try:
             with open(settings_path, 'r', encoding='utf-8') as f:

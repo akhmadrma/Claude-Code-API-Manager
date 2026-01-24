@@ -8,6 +8,7 @@ license = "MIT"
 packages = [
     { include = "cli" },
     { include = "core" },
+    { include = "constans" },
     { include = "storage" },
     { include = "ui" },
     { include = "utils" },

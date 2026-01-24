@@ -28,6 +28,7 @@ class KeyManager:
             # Set proper permissions
             os.chmod(self.env_path, 0o600)
 
+#fixme pylint bug
     def add_key(self, name: str, key_value: str, service: str,
                 description: Optional[str] = None, tags: List[str] = None) -> APIKey:
         """
@@ -111,6 +112,7 @@ class KeyManager:
         if not self.key_exists(name):
             raise KeyError(f"Key '{name}' not found")
 
+        # fixme pylint, pylance bug
         current_value = self.get_key_value(name)
 
         if new_value:
@@ -118,6 +120,7 @@ class KeyManager:
             service_to_check = service or self._get_service_from_metadata(name)
             KeyValidator.validate(new_value, service_to_check or "unknown")
             set_key(str(self.env_path), name, new_value)
+            # fixme pylint bug
             current_value = new_value
 
         # Update metadata (would be handled by MetadataManager)

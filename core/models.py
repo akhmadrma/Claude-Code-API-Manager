@@ -2,7 +2,30 @@
 
 from datetime import datetime
 from typing import List, Optional
+from constans.providerUrl import  BaseURL
 from pydantic import BaseModel, Field, field_validator
+
+
+
+
+class Environment(BaseModel):
+    """Claude API environment configuration."""
+
+    anthropic_default_haiku_model: str = Field(..., description="Default Haiku model identifier")
+    anthropic_default_sonnet_model: str = Field(..., description="Default Sonnet model identifier")
+    anthropic_default_opus_model: str = Field(..., description="Default Opus model identifier")
+    anthropic_auth_token: str = Field(
+        ..., min_length=1, description="Anthropic API authentication token"
+    )
+    anthropic_base_url: BaseURL = Field(..., description="Anthropic API base URL endpoint")
+    api_timeout_ms: int = Field(
+        ..., gt=0, le=300000, description="API request timeout in milliseconds"
+    )
+    claude_code_disable_nonessential_traffic: bool = Field(
+        default=False, description="Disable telemetry and non-essential network traffic"
+    )
+
+
 
 
 class APIKey(BaseModel):
@@ -38,7 +61,7 @@ class Settings(BaseModel):
     backup_location: str = Field(default="./backups", description="Backup directory path")
     default_services: List[str] = Field(
         default_factory=lambda: ["OpenAI", "GitHub", "AWS", "Google"],
-        description="Default service types for autocomplete"
+        description="Default service types for autocomplete",
     )
     display_masked: bool = Field(default=True, description="Mask keys in display")
     auto_gitignore: bool = Field(default=True, description="Auto-add sensitive files to gitignore")
