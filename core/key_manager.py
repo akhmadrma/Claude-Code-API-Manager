@@ -30,7 +30,7 @@ class KeyManager:
 
 #fixme pylint bug
     def add_key(self, name: str, key_value: str, service: str,
-                description: Optional[str] = None, tags: List[str] = None) -> APIKey:
+                description: Optional[str] = None, tags: Optional[List[str]] = None) -> APIKey:
         """
         Add a new API key.
 

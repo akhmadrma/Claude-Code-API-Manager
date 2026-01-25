@@ -1,10 +1,7 @@
 # Constant mappings for known API providers
-from typing import Final, Literal, TypeAlias
+from typing import Final
 from pydantic import BaseModel, Field
-
-Provider: TypeAlias = Literal["anthropic", "glm"]
-
-PROVIDERS: Final[tuple[Provider, ...]] = ("anthropic", "glm")
+from .providers import Provider
 
 PROVIDER_MODELS: Final[dict[Provider, list[str]]] = {
     "anthropic": [
@@ -25,16 +22,13 @@ class Model(BaseModel):
 
     provider: Provider
     anthropic_default_haiku_model: str = Field(
-        default=PROVIDER_MODELS["anthropic"][0],
-        description="Default Haiku model identifier"
+        default=PROVIDER_MODELS["anthropic"][0], description="Default Haiku model identifier"
     )
     anthropic_default_sonnet_model: str = Field(
-        default=PROVIDER_MODELS["anthropic"][1],
-        description="Default Sonnet model identifier"
+        default=PROVIDER_MODELS["anthropic"][1], description="Default Sonnet model identifier"
     )
     anthropic_default_opus_model: str = Field(
-        default=PROVIDER_MODELS["anthropic"][2],
-        description="Default Opus model identifier"
+        default=PROVIDER_MODELS["anthropic"][2], description="Default Opus model identifier"
     )
 
     @classmethod

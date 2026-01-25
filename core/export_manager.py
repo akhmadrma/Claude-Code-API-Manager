@@ -77,7 +77,7 @@ class ExportClaudeSettings:
             return backup_path
         except Exception as e:
             raise IOError(f"Failed to create backup: {e}") from e
-        
+
     ## TODO replace default provider with anthropic
     def _prepare_settings(self, api_keys: str, provider: Provider = "glm") -> Dict[str, Any]:
         """
@@ -91,13 +91,14 @@ class ExportClaudeSettings:
         """
         # Create Environment object with the first API key as auth token
         # Use the first available key or a placeholder
-
+        model = Model.create_provider_models(provider)
+        base_url = BaseURL.create_for_provider(provider)
         env = Environment(
-            anthropic_default_haiku_model=Model.create_provider_models(provider).to_values()[0],
-            anthropic_default_sonnet_model=Model.create_provider_models(provider).to_values()[1],
-            anthropic_default_opus_model=Model.create_provider_models(provider).to_values()[2],
+            anthropic_default_haiku_model=model.to_values()[0],
+            anthropic_default_sonnet_model=model.to_values()[1],
+            anthropic_default_opus_model=model.to_values()[2],
             anthropic_auth_token=api_keys or "placeholder-token",
-            anthropic_base_url=BaseURL.create_for_provider(provider),
+            anthropic_base_url= base_url,
             api_timeout_ms=30000,
             claude_code_disable_nonessential_traffic=False,
         )
@@ -113,7 +114,7 @@ class ExportClaudeSettings:
                 "API_TIMEOUT_MS": env.api_timeout_ms,
                 "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": env.claude_code_disable_nonessential_traffic,
             },
-            "always_thinking_enabled": True,
+            "alwaysThinkingEnabled": True,
         }
 
         return settings_dict

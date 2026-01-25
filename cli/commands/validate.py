@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 from questionary import text
-from core import export_manager
 from core.validators import ValidationError
 from typer import echo, Exit
 import typer
@@ -41,7 +40,7 @@ def validate_cmd(
             "Do you want to create a new settings file? (y/n): ",
             default="y",
             # fixme : Type of parameter "x" is unknown
-            validate=lambda x: x.lower() in ["y", "n"],
+            validate=lambda x: x.lower() in ["y", "n"], #
         ).ask()
         if answer == "y":
             # ConfigValidator.create_settings()
@@ -52,21 +51,25 @@ def validate_cmd(
             raise Exit(code=1)
 
     # validate structure
-    validateStructure = ConfigValidator.validate_structure(validateSettings)
-    echo("✅ Validation Structure: PASSED")
-    if validateStructure:
-        echo("❌ Validation: FAILED")
-        for err in validateStructure:
-            echo(f"  ⚠️  {err}")
+    try:
+        ConfigValidator.validate_structure(validateSettings)
+    except ValidationError as e:
+        echo(f"❌ Validation: FAILED\n{str(e)}")
         raise Exit(code=1)
+    echo("✅ Validation Structure: PASSED")
 
     # validate environment variables
-    validateEnvVars = ConfigValidator.validate_env_vars(validateSettings)
-    echo("✅ Validation Environment Variables: PASSED")
-    if validateEnvVars:
-        echo("❌ Validation: FAILED")
-        for err in validateEnvVars:
-            echo(f"  ⚠️  {err}")
+    try:
+        validateEnvVars = ConfigValidator.validate_env_vars(validateSettings)
+        echo("✅ Validation Environment Variables: PASSED")
+        if validateEnvVars:
+            echo("❌ Validation: FAILED")
+            for err in validateEnvVars:
+                echo(f"  ⚠️  {err}")
+            raise Exit(code=1)
+    except ValidationError as e:
+        echo(f"❌ Validation: FAILED\n{str(e)}")
         raise Exit(code=1)
 
+    echo("✅ Validation: PASSED")
     raise Exit(code=0)

@@ -1,19 +1,15 @@
 # Constant mappings for known API providers
-from typing import Final, Literal, TypeAlias
+from typing import Final
 
 from pydantic import BaseModel, Field, field_validator
 
-Provider: TypeAlias = Literal["anthropic", "glm"]
-
-PROVIDERS: Final[tuple[Provider, ...]] = ("anthropic", "glm")
+from .providers import Provider, PROVIDERS
 
 PROVIDER_URLS: Final[dict[Provider, str]] = {
     "anthropic": "https://api.anthropic.com",
     "glm": "https://api.z.ai/api/anthropic",
 }
 
-
-# TODO : Refactor BaseURL Return onlu string url
 class BaseURL(BaseModel):
     """
     Base URL configuration for different API providers.

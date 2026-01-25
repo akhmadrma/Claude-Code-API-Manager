@@ -1,22 +1,23 @@
-# Cloud Code API Manager - Architecture Document
+# Claude Code API Manager - Architecture Document
 
 ## Project Overview
 
-**Project Name**: Cloud Code API Manager  
-**Version**: 1.0.0  
-**Purpose**: Interactive CLI tool for managing API keys with beautiful terminal UI  
-**Target Users**: Developers managing multiple API keys across different services
+**Project Name**: CAPIM (Cloud Code API Manager)
+**Version**: 1.0.0
+**Purpose**: Interactive CLI tool for managing API keys with beautiful terminal UI and Claude Code settings integration
+**Target Users**: Developers managing multiple API keys across different services and Claude Code configurations
 
 ## Tech Stack
 
-| Component           | Technology    | Purpose                                                   |
-| ------------------- | ------------- | --------------------------------------------------------- |
-| CLI Framework       | Typer         | Command-line interface with type hints and automatic help |
-| UI/Display          | Rich          | Beautiful terminal output with colors, tables, and panels |
-| Interactive Prompts | Questionary   | OpenCommit-style interactive menus and selections         |
-| Storage             | python-dotenv | Read/write API keys to .env files                         |
-| Data Validation     | Pydantic      | Type validation for models and configurations             |
-| Encryption          | cryptography  | Backup file encryption                                    |
+| Component           | Technology        | Purpose                                                   |
+| ------------------- | ----------------- | --------------------------------------------------------- |
+| CLI Framework       | Typer             | Command-line interface with type hints and automatic help |
+| UI/Display          | Rich              | Beautiful terminal output with colors, tables, and panels |
+| Interactive Prompts | Questionary       | OpenCommit-style interactive menus and selections         |
+| Storage             | python-dotenv     | Read/write API keys to .env files                         |
+| Data Validation     | Pydantic          | Type validation for models and configurations             |
+| Encryption          | cryptography      | Backup file encryption                                    |
+| Settings Management | Custom exporters  | Claude Code settings.json generation and validation       |
 
 ## Core Features
 
@@ -97,72 +98,88 @@
   - Shell export format
   - Security preferences
 
+### 8. Claude Code Integration (NEW)
+
+- **Settings Validation**:
+  - Validate Claude Code installation directory
+  - Check settings.json structure and format
+  - Verify environment variables configuration
+  - Model configuration validation
+
+- **Automatic Settings Creation**:
+  - Generate settings.json with proper structure
+  - Support for multiple API providers (Anthropic, GLM)
+  - Pre-configured model mappings for each provider
+  - Automatic backup before creating new settings
+
+- **Provider Management**:
+  - `constants/providers.py`: Provider type definitions
+  - `constants/providerModel.py`: Model configurations per provider
+  - `constants/providerUrl.py`: Base URL management for providers
+  - `constants/settings.py`: Settings structure validation
+
+- **Export Functionality**:
+  - `ExportClaudeSettings`: Generate Claude-compatible settings.json
+  - Backup support for existing settings
+  - Environment variable configuration
+  - Model selection and configuration
+
 ## Project Structure
 
 ```
-cloud-code-api-manager/
+capim/
 ├── cli/
 │   ├── __init__.py
 │   ├── main.py                 # Typer app entry point
 │   └── commands/
 │       ├── __init__.py
-│       ├── add.py              # Create new API key
-│       ├── list.py             # List keys with filters
-│       ├── show.py             # Show single key details
-│       ├── update.py           # Update existing key
-│       ├── delete.py           # Delete key
-│       ├── use.py              # Interactive key selection
-│       ├── export.py           # Environment variable export
-│       ├── backup.py           # Backup operations
-│       ├── restore.py          # Restore operations
-│       └── config.py           # Settings.json editor
+│       ├── add.py              # Create new API key (IMPLEMENTED)
+│       ├── list.py             # List keys with filters (IMPLEMENTED)
+│       ├── delete.py           # Delete key (IMPLEMENTED)
+│       ├── use.py              # Interactive key selection (IMPLEMENTED)
+│       └── validate.py         # Claude settings validation (IMPLEMENTED)
 │
 ├── core/
 │   ├── __init__.py
-│   ├── key_manager.py          # Core CRUD logic
-│   ├── metadata_manager.py     # Metadata operations
-│   ├── export_manager.py       # Export logic
-│   ├── backup_manager.py       # Backup/restore logic
-│   ├── filter_engine.py        # Search and filter logic
-│   ├── security.py             # Security checks and validations
-│   ├── validators.py           # Key format validators
-│   └── models.py               # Pydantic models
+│   ├── key_manager.py          # Core CRUD logic (IMPLEMENTED)
+│   ├── metadata_manager.py     # Metadata operations (IMPLEMENTED)
+│   ├── export_manager.py       # Export logic + Claude settings export (IMPLEMENTED)
+│   ├── validators.py           # Key format validators + Claude config validation (IMPLEMENTED)
+│   └── models.py               # Pydantic models (APIKey, Settings, Environment, BackupMetadata)
+│
+├── constans/                   # Provider and settings constants (NOTE: "constans" not "constants")
+│   ├── __init__.py
+│   ├── providers.py            # Provider type definitions (IMPLEMENTED)
+│   ├── providerModel.py        # Model configurations per provider (IMPLEMENTED)
+│   ├── providerUrl.py          # Base URL management (IMPLEMENTED)
+│   └── settings.py             # Settings structure validation (IMPLEMENTED)
 │
 ├── storage/
 │   ├── __init__.py
-│   ├── env_handler.py          # .env file operations
-│   ├── metadata_handler.py     # JSON metadata operations
-│   ├── backup_handler.py       # Backup file operations
-│   └── settings_handler.py     # Settings.json operations
+│   ├── env_handler.py          # .env file operations (IMPLEMENTED)
+│   └── metadata_handler.py     # JSON metadata operations (IMPLEMENTED)
 │
 ├── ui/
 │   ├── __init__.py
-│   ├── display.py              # Rich display utilities
-│   ├── prompts.py              # Questionary prompts
-│   ├── tables.py               # Table formatters
-│   └── themes.py               # Color schemes
+│   └── display.py              # Rich display utilities (IMPLEMENTED)
 │
 ├── utils/
 │   ├── __init__.py
-│   ├── crypto.py               # Encryption utilities
-│   ├── shell.py                # Shell command generators
-│   └── helpers.py              # Common utilities
+│   ├── crypto.py               # Encryption utilities (IMPLEMENTED)
+│   ├── shell.py                # Shell command generators (IMPLEMENTED)
+│   └── helpers.py              # Common utilities (IMPLEMENTED)
 │
 ├── tests/
-│   ├── __init__.py
-│   ├── test_key_manager.py
-│   ├── test_metadata.py
-│   ├── test_export.py
-│   ├── test_backup.py
-│   └── test_security.py
+│   └── __init__.py
 │
+├── claudedocs/                 # Claude documentation (TODO: Add content)
 ├── .env                        # API keys storage (gitignored)
-├── keys_metadata.json          # Key metadata (gitignored)
-├── settings.json               # Application settings
 ├── .gitignore
+├── .prettierignore
+├── .prettierrc
 ├── pyproject.toml              # Dependencies and project config
 ├── README.md
-└── LICENSE
+└── ARCHITECTURE.md
 ```
 
 ## Data Models
@@ -190,45 +207,90 @@ class Settings(BaseModel):
     shell_format: str = "bash"
 ```
 
+### Environment Model (NEW)
+
+```python
+class Environment(BaseModel):
+    """Claude API environment configuration."""
+    anthropic_default_haiku_model: str
+    anthropic_default_sonnet_model: str
+    anthropic_default_opus_model: str
+    anthropic_auth_token: str
+    anthropic_base_url: BaseURL
+    api_timeout_ms: int
+    claude_code_disable_nonessential_traffic: bool
+```
+
+### Provider Models (NEW)
+
+```python
+Provider: TypeAlias = Literal["anthropic", "glm"]
+
+class Model(BaseModel):
+    """Default model configurations for each provider."""
+    provider: Provider
+    anthropic_default_haiku_model: str
+    anthropic_default_sonnet_model: str
+    anthropic_default_opus_model: str
+
+class BaseURL(BaseModel):
+    """Base URL configuration for different API providers."""
+    provider: Provider
+    value: str  # Validated base URL
+```
+
 ## CLI Command Structure
 
-### Key Management
+### Currently Implemented Commands
 
-- `cloudcode add` - Add new API key (interactive)
-- `cloudcode list [--service SERVICE] [--tag TAG]` - List keys with filters
-- `cloudcode show KEY_NAME` - Show key details
-- `cloudcode update KEY_NAME` - Update key value or metadata
-- `cloudcode delete KEY_NAME` - Delete key
-- `cloudcode use` - Interactive key selection
+- `capi add` - Add new API key (interactive)
+- `capi list` - List keys with filters  
+- `capi delete KEY_NAME` - Delete key
+- `capi use` - Interactive key selection
+- `capi validate` - Validate Claude Code settings.json
+- `capi validate --report` - Display validation report as JSON
+- `capi version` - Show version information
 
-### Export
+### Planned Commands (Not Yet Implemented)
 
-- `cloudcode export KEY_NAME` - Export single key
-- `cloudcode export --all` - Export all keys
-- `cloudcode export --service SERVICE` - Export by service
+- `capi show KEY_NAME` - Show key details
+- `capi update KEY_NAME` - Update key value or metadata
+- `capi export KEY_NAME` - Export single key
+- `capi export --all` - Export all keys
+- `capi export --service SERVICE` - Export by service
+- `capi backup [--password PASSWORD]` - Create backup
+- `capi backup list` - List available backups
+- `capi restore BACKUP_FILE` - Restore from backup
+- `capi config edit` - Edit settings.json interactively
+- `capi config show` - Display current settings
+- `capi config reset` - Reset to defaults
+- `capi security check` - Run security audit
+- `capi security fix` - Auto-fix permission issues
 
-### Backup/Restore
+### Note on Command Name
 
-- `cloudcode backup [--password PASSWORD]` - Create backup
-- `cloudcode backup list` - List available backups
-- `cloudcode restore BACKUP_FILE` - Restore from backup
-
-### Configuration
-
-- `cloudcode config edit` - Edit settings.json interactively
-- `cloudcode config show` - Display current settings
-- `cloudcode config reset` - Reset to defaults
-
-### Security
-
-- `cloudcode security check` - Run security audit
-- `cloudcode security fix` - Auto-fix permission issues
+The CLI command is `capi` (not `cloudcode`) as defined in `pyproject.toml`:
+```toml
+[tool.poetry.scripts]
+capi = "cli.main:app"
+```
 
 ## Workflow Examples
 
+### Validating Claude Code Settings (NEW)
+
+1. User runs `capi validate`
+2. System checks Claude Code installation
+3. Validates settings.json structure and environment variables
+4. If validation fails:
+   - Prompts user to create new settings file
+   - Generates proper settings.json with defaults
+   - Backs up existing settings if present
+5. Reports validation status with clear pass/fail indicators
+
 ### Adding a New API Key
 
-1. User runs `cloudcode add`
+1. User runs `capi add`
 2. Questionary prompts for:
    - Key name
    - Service type (with autocomplete)
@@ -241,7 +303,7 @@ class Settings(BaseModel):
 
 ### Using an API Key
 
-1. User runs `cloudcode use`
+1. User runs `capi use`
 2. Questionary displays filtered list of keys
 3. User selects key with arrow keys
 4. Options presented:
@@ -252,7 +314,7 @@ class Settings(BaseModel):
 
 ### Creating Backup
 
-1. User runs `cloudcode backup`
+1. User runs `capi backup` (planned - not yet implemented)
 2. Prompts for password (optional)
 3. Creates encrypted archive
 4. Displays success with backup location
@@ -264,7 +326,9 @@ class Settings(BaseModel):
 
 - `.env` must be 600 (owner read/write only)
 - `keys_metadata.json` must be 600
+- `settings.json` must be 600
 - Backup files encrypted with user password
+- Claude Code settings protected with automatic backup
 
 ### Git Safety
 
@@ -297,6 +361,29 @@ black = "^24.0.0"
 ruff = "^0.2.0"
 ```
 
+## Provider Configuration
+
+### Supported Providers
+
+The tool comes with pre-configured support for:
+
+1. **Anthropic**
+   - Base URL: `https://api.anthropic.com`
+   - Models: claude-3-haiku, claude-3.5-sonnet, claude-3-opus
+
+2. **GLM (Zhipu AI)**
+   - Base URL: `https://api.z.ai/api/anthropic`
+   - Models: glm-4.5, glm-4.6, glm-4.7
+
+### Adding New Providers
+
+To add a new provider:
+
+1. Update `constans/providers.py` with provider type
+2. Add model mappings to `constans/providerModel.py`
+3. Add base URL to `constans/providerUrl.py`
+4. Implement provider-specific validation if needed
+
 ## Future Enhancements (v2.0)
 
 - Cloud sync (encrypted storage in S3/Dropbox)
@@ -312,25 +399,42 @@ ruff = "^0.2.0"
 ### Installation
 
 ```bash
-pip install cloud-code-api-manager
+pip install capim
 # or
-pipx install cloud-code-api-manager
+pipx install capim
 ```
 
 ### Quick Start
 
 ```bash
 # Add your first API key
-cloudcode add
+capi add
 
 # List all keys
-cloudcode list
+capi list
 
 # Use a key
-cloudcode use
+capi use
 
-# Create backup
-cloudcode backup
+# Validate Claude Code settings
+capi validate
+
+# Show version
+capi version
+```
+
+### Claude Code Setup
+
+```bash
+# Validate and auto-create Claude settings if missing
+capi validate
+
+# Tool will prompt to create settings.json if validation fails
+# Settings include:
+# - Provider-specific model configurations
+# - Base URL management
+# - Environment variable setup
+# - Automatic backup of existing settings
 ```
 
 ## License
