@@ -4,10 +4,12 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 from dotenv import load_dotenv, set_key, unset_key
+from core.metadata_manager import MetadataManager
 
 from constans.providers import Provider
 from .models import APIKey
-from .validators import KeyValidator
+
+metadata_manager = MetadataManager()
 
 
 class KeyManager:
@@ -56,15 +58,19 @@ class KeyManager:
             ValidationError: If key format is invalid
             ValueError: If key already exists
         """
-        # Validate key format
-        KeyValidator.validate(key_value, provider)
 
         # Check if key already exists
         if self.key_exists(name):
             raise ValueError(f"Key '{name}' already exists")
 
         # Create APIKey model
-        api_key = APIKey(name=name, provider=provider, description=description, tags=tags or [])
+        api_key = APIKey(
+            name=name,
+            provider=provider,
+            description=description,
+            tags=tags or [],
+            status="inactive",
+        )
 
         # Store in .env file
         set_key(str(self.env_path), name, key_value)
@@ -91,6 +97,32 @@ class KeyManager:
             raise KeyError(f"Key '{name}' not found")
 
         return value
+
+    def get_active_key(
+        self,
+    ) -> APIKey:
+        """
+        Retrieve the active API key.
+
+        Returns:
+            APIKey object
+
+        Raises:
+            KeyError: If no active key found
+        """
+        all_metadata: Dict[str, APIKey] = metadata_manager.list_all_metadata()
+        active_key = next((key for key in all_metadata.values() if key.status == "active"), None)
+
+        if not active_key:
+            raise KeyError("No active key found")
+
+        return APIKey(
+            name=active_key.name,
+            provider=active_key.provider,
+            description=active_key.description,
+            tags=active_key.tags,
+            status=active_key.status,
+        )
 
     def update_key(
         self,
@@ -124,8 +156,6 @@ class KeyManager:
         provider_to_check = provider or self._get_provider_from_metadata(name)
 
         if new_value and provider_to_check:
-            # Validate new value
-            KeyValidator.validate(new_value, provider_to_check)
             set_key(str(self.env_path), name, new_value)
 
         # Update metadata (would be handled by MetadataManager)
@@ -152,6 +182,58 @@ class KeyManager:
 
         unset_key(str(self.env_path), name)
         return True
+
+    def set_active_key(self, name: str) -> APIKey:
+        """
+        Set an API key as active.
+
+        Args:
+            name: Key identifier
+
+        Returns:
+            True if set
+
+        Raises:
+            KeyError: If key not found
+        """
+        metadata_key = metadata_manager.get_metadata(name)
+
+        if not metadata_key:
+            raise KeyError(f"Key '{name}' not found")
+
+        return APIKey(
+            name=name,
+            provider=metadata_key.provider,
+            description=metadata_key.description,
+            tags=metadata_key.tags,
+            status="active",
+        )
+
+    def set_inactive_key(self, name: str) -> APIKey:
+        """
+        Set an API key as active.
+
+        Args:
+            name: Key identifier
+
+        Returns:
+            True if set
+
+        Raises:
+            KeyError: If key not found
+        """
+        metadata_key = metadata_manager.get_metadata(name)
+
+        if not metadata_key:
+            raise KeyError(f"Key '{name}' not found")
+
+        return APIKey(
+            name=name,
+            provider=metadata_key.provider,
+            description=metadata_key.description,
+            tags=metadata_key.tags,
+            status="inactive",
+        )
 
     def key_exists(self, name: str) -> bool:
         """Check if a key exists."""

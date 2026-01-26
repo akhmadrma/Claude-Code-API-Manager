@@ -37,6 +37,7 @@ class APIKey(BaseModel):
     provider: Provider = Field(..., description="Service type (OpenAI, GitHub, AWS, etc.)")
     description: Optional[str] = Field(None, description="User-defined purpose")
     tags: List[str] = Field(default_factory=list, description="Categorization tags")
+    status: str = Field(default="active", description="API key status")
     created_at: datetime = Field(default_factory=datetime.now, description="Creation timestamp")
     updated_at: datetime = Field(default_factory=datetime.now, description="Last update timestamp")
 

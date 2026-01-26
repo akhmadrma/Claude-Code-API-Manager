@@ -2,13 +2,11 @@
 
 import json
 import os
-import re
 from pathlib import Path
 from typing import  Dict, Any, TypedDict, NotRequired
 
 from dotenv import load_dotenv
 
-from constans.providers import Provider
 
 
 class EnvironmentVariables(TypedDict):
@@ -37,74 +35,6 @@ class ValidationError(Exception):
         super().__init__(self.message)
 
 
-class KeyValidator:
-    """Base validator for API keys."""
-
-    # Common service patterns
-    PATTERNS = {
-        "OpenAI": r"^sk-[a-zA-Z0-9]{48}$",
-        "GitHub": r"^ghp_[a-zA-Z0-9]{36}$|^gho_[a-zA-Z0-9]{36}$|^ghu_[a-zA-Z0-9]{36}$|^ghs_[a-zA-Z0-9]{36}$|^ghr_[a-zA-Z0-9]{36}$",
-        "AWS": r"^AKIA[0-9A-Z]{16}$",
-        "Google": r"^AIza[a-zA-Z0-9_\-]{35}$",
-        "Stripe": r"^sk_live_[a-zA-Z0-9]{24,}$|^sk_test_[a-zA-Z0-9]{24,}$",
-        "Slack": r"^xoxb-[a-zA-Z0-9-]{10,}$|^xoxp-[a-zA-Z0-9-]{10,}$",
-        "Twilio": r"^AC[a-zA-Z0-9_\-]{32}$",
-        "SendGrid": r"^SG\.[a-zA-Z0-9_\-]{22}\.[a-zA-Z0-9_\-]{43}$",
-    }
-
-    @classmethod
-    def validate(cls, key: str, provider: Provider) -> bool:
-        """
-        Validate an API key against its service pattern.
-
-        Args:
-            key: The API key to validate
-            service: The service name (case-insensitive)
-
-        Returns:
-            True if valid
-
-        Raises:
-            ValidationError: If key format is invalid
-        """
-        if not key or not key.strip():
-            raise ValidationError("API key cannot be empty", provider)
-
-        provider_lower = provider.lower()
-
-        # Check if we have a pattern for this service
-        pattern = None
-        for svc_name, pattern_str in cls.PATTERNS.items():
-            if svc_name.lower() == provider_lower:
-                pattern = re.compile(pattern_str)
-                break
-
-        if pattern is None:
-            # No pattern defined for this service, do basic validation
-            if len(key) < 10:
-                raise ValidationError(
-                    f"API key seems too short for {provider} (minimum 10 characters)",
-                    provider
-                )
-            return True
-
-        if not pattern.match(key):
-            raise ValidationError(
-                f"API key format does not match expected pattern for {provider}",
-                provider
-            )
-
-        return True
-
-    @classmethod
-    def get_supported_providers(cls) -> list[str]:
-        """Get list of providers with validation patterns."""
-        return list(cls.PATTERNS.keys())
-
-    @classmethod
-    def is_provider_supported(cls, provider: str) -> bool:
-        """Check if a provider has validation patterns."""
-        return provider.lower() in [s.lower() for s in cls.PATTERNS.keys()]
 
 
 class ConfigValidator:

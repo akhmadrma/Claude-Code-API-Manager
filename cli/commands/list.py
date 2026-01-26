@@ -63,19 +63,24 @@ def list_cmd(
         table.add_column("Service", style="magenta")
         table.add_column("API_KEY", style="white")
         table.add_column("Description", style="white")
-        table.add_column("Tags", style="green")
+        table.add_column("Tags", style="white")
+        table.add_column("Status", style="white")
         table.add_column("Created", style="dim")
 
         for key in filtered_keys:
             # Mask the key
             masked_key = mask_key(str(key_manager.get_key_value(key.name)))
+            
+            if key.status == "active":
+                key.status = f"[green]active[/green]"
 
             table.add_row(
                 key.name,
                 key.provider,
                 masked_key,
                 key.description or "N/A",
-                ", ".join(key.tags) if key.tags else "None",
+                ", ".join(key.tags) if key.tags else "N/A",
+                key.status,
                 key.created_at.strftime("%Y-%m-%d") if key.created_at else "N/A",
             )
 

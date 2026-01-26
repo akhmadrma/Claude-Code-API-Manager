@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 from typing_extensions import TypedDict
 
 from constans.providers import Provider
@@ -17,6 +17,7 @@ class MetadataDict(TypedDict, total=False):
     provider: Provider
     description: Optional[str]
     tags: List[str]
+    status: str
     created_at: datetime
     updated_at: datetime
 
@@ -89,14 +90,29 @@ class MetadataManager:
         """
         Save or update metadata for an API key.
 
+        Preserves the original created_at timestamp when updating an existing key.
+        Only updates the updated_at timestamp to the current time.
+
         Args:
             api_key: APIKey object to save
         """
         metadata = self._load_all_metadata()
+        existing_metadata = metadata.get(api_key.name)
+
         api_dict = api_key.model_dump(mode="python")
+
         # Convert datetime objects to strings for JSON serialization
-        api_dict["created_at"] = api_dict["created_at"].isoformat()
-        api_dict["updated_at"] = api_dict["updated_at"].isoformat()
+        if existing_metadata:
+            # Updating existing key: preserve original created_at
+            ## fixme pylance error
+            api_dict["created_at"] = existing_metadata["created_at"]
+            # Update updated_at to current time
+            api_dict["updated_at"] = datetime.now().isoformat()
+        else:
+            # Creating new key: both timestamps set to current time (from api_key object)
+            api_dict["created_at"] = api_dict["created_at"].isoformat()
+            api_dict["updated_at"] = api_dict["updated_at"].isoformat()
+
         metadata[api_key.name] = api_dict  # type: ignore
         self._write_metadata(metadata)
 
