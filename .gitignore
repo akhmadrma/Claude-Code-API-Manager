@@ -60,3 +60,6 @@ claudedocs/
 # OS
 .DS_Store
 Thumbs.db
+
+#MCP
+*.serena

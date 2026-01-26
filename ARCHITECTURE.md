@@ -3,7 +3,7 @@
 ## Project Overview
 
 **Project Name**: CAPIM (Cloud Code API Manager)
-**Version**: 1.0.0
+**Version**: 0.1.0
 **Purpose**: Interactive CLI tool for managing API keys with beautiful terminal UI and Claude Code settings integration
 **Target Users**: Developers managing multiple API keys across different services and Claude Code configurations
 
@@ -23,56 +23,34 @@
 
 ### 1. CRUD Operations
 
-- **Create**: Add new API keys with metadata (name, service, description)
+- **Create**: Add new API keys with metadata (name, provider, description, tags)
 - **Read**: View individual API key details
-- **Update**: Modify existing API key values or metadata
+- **Update**: Modify existing API key values or metadata (implemented in core)
 - **Delete**: Remove API keys with confirmation prompts
-- **List**: Display all stored API keys in formatted table
-- **Use**: Interactive selection and usage of stored keys
+- **List**: Display all stored API keys in formatted table with filtering
+- **Use**: Interactive selection and activation of stored keys
 
 ### 2. Metadata Storage
 
 - Separate `keys_metadata.json` file for storing:
   - Key name (identifier)
-  - Service type (OpenAI, GitHub, AWS, etc.)
+  - Provider type (Anthropic, GLM, etc.)
   - Description (user-defined purpose)
   - Tags (for categorization)
+  - Active status (for key activation)
   - Created timestamp
   - Updated timestamp
 - Enables rich display without exposing actual key values
 - Supports filtering and search functionality
 
-### 3. Environment Variable Export
+### 3. Search and Filter
 
-- **Single Key Export**: `cloudcode export KEY_NAME`
-- **Bulk Export**: `cloudcode export --all` or `cloudcode export --service openai`
-- **Shell Integration**: `eval $(cloudcode export KEY_NAME)`
-- Generates shell-compatible export commands
-- Supports both bash/zsh and fish shell formats
-- Temporary vs permanent export options
+- **Filter by Provider**: Display only keys for specific providers (--provider flag)
+- **Filter by Tags**: Search using custom tags (--tag flag)
+- **Text Search**: Find keys by name or description (--search flag)
+- Color-coded Display: Different colors for different provider types
 
-### 4. Backup and Restore
-
-- **Backup Creation**:
-  - Encrypted backups of `.env` and `keys_metadata.json`
-  - Timestamp-based naming: `backup_YYYYMMDD_HHMMSS.enc`
-  - Password-protected encryption
-  - Optional compression
-- **Restore Operations**:
-  - List available backups
-  - Preview backup contents before restore
-  - Confirmation prompts before overwriting
-  - Merge or replace options
-
-### 5. Search and Filter
-
-- **Filter by Service**: Display only keys for specific services
-- **Filter by Tags**: Search using custom tags
-- **Filter by Date**: Show keys created/updated within date range
-- **Text Search**: Find keys by name or description
-- **Color-coded Display**: Different colors for different service types
-
-### 6. Security Enhancement
+### 4. Security Enhancement
 
 - **File Permission Checks**:
   - Verify `.env` has 600 permissions (Unix/Linux)
@@ -84,21 +62,12 @@
   - Warning display if sensitive files detected in git
 - **Key Validation**:
   - Format validation before storage
-  - Service-specific pattern matching
+  - Provider-specific pattern matching
 - **Secure Display**:
   - Masked key values in list view
   - Optional reveal with confirmation
 
-### 7. Settings Configuration
-
-- `settings.json` editor for:
-  - Default service types
-  - Display preferences
-  - Backup location
-  - Shell export format
-  - Security preferences
-
-### 8. Claude Code Integration (NEW)
+### 5. Claude Code Integration
 
 - **Settings Validation**:
   - Validate Claude Code installation directory
@@ -113,10 +82,10 @@
   - Automatic backup before creating new settings
 
 - **Provider Management**:
-  - `constants/providers.py`: Provider type definitions
-  - `constants/providerModel.py`: Model configurations per provider
-  - `constants/providerUrl.py`: Base URL management for providers
-  - `constants/settings.py`: Settings structure validation
+  - `constans/providers.py`: Provider type definitions
+  - `constans/providerModel.py`: Model configurations per provider
+  - `constans/providerUrl.py`: Base URL management for providers
+  - `constans/settings.py`: Settings structure validation
 
 - **Export Functionality**:
   - `ExportClaudeSettings`: Generate Claude-compatible settings.json
@@ -133,53 +102,51 @@ capim/
 │   ├── main.py                 # Typer app entry point
 │   └── commands/
 │       ├── __init__.py
-│       ├── add.py              # Create new API key (IMPLEMENTED)
-│       ├── list.py             # List keys with filters (IMPLEMENTED)
-│       ├── delete.py           # Delete key (IMPLEMENTED)
-│       ├── use.py              # Interactive key selection (IMPLEMENTED)
-│       └── validate.py         # Claude settings validation (IMPLEMENTED)
+│       ├── add.py              # Create new API key
+│       ├── list.py             # List keys with filters
+│       ├── delete.py           # Delete key
+│       ├── use.py              # Interactive key selection and activation
+│       └── validate.py         # Claude settings validation
 │
 ├── core/
 │   ├── __init__.py
-│   ├── key_manager.py          # Core CRUD logic (IMPLEMENTED)
-│   ├── metadata_manager.py     # Metadata operations (IMPLEMENTED)
-│   ├── export_manager.py       # Export logic + Claude settings export (IMPLEMENTED)
-│   ├── validators.py           # Key format validators + Claude config validation (IMPLEMENTED)
-│   └── models.py               # Pydantic models (APIKey, Settings, Environment, BackupMetadata)
+│   ├── key_manager.py          # Core CRUD logic
+│   ├── metadata_manager.py     # Metadata operations
+│   ├── export_manager.py       # Export logic + Claude settings export
+│   ├── validators.py           # Key format validators + Claude config validation
+│   └── models.py               # Pydantic models
 │
 ├── constans/                   # Provider and settings constants (NOTE: "constans" not "constants")
 │   ├── __init__.py
-│   ├── providers.py            # Provider type definitions (IMPLEMENTED)
-│   ├── providerModel.py        # Model configurations per provider (IMPLEMENTED)
-│   ├── providerUrl.py          # Base URL management (IMPLEMENTED)
-│   └── settings.py             # Settings structure validation (IMPLEMENTED)
+│   ├── providers.py            # Provider type definitions
+│   ├── providerModel.py        # Model configurations per provider
+│   ├── providerUrl.py          # Base URL management
+│   └── settings.py             # Settings structure validation
 │
 ├── storage/
 │   ├── __init__.py
-│   ├── env_handler.py          # .env file operations (IMPLEMENTED)
-│   └── metadata_handler.py     # JSON metadata operations (IMPLEMENTED)
+│   ├── env_handler.py          # .env file operations
+│   └── metadata_handler.py     # JSON metadata operations
 │
 ├── ui/
 │   ├── __init__.py
-│   └── display.py              # Rich display utilities (IMPLEMENTED)
+│   └── display.py              # Rich display utilities
 │
 ├── utils/
 │   ├── __init__.py
-│   ├── crypto.py               # Encryption utilities (IMPLEMENTED)
-│   ├── shell.py                # Shell command generators (IMPLEMENTED)
-│   └── helpers.py              # Common utilities (IMPLEMENTED)
+│   ├── crypto.py               # Encryption utilities
+│   ├── shell.py                # Shell command generators
+│   └── helpers.py              # Common utilities
 │
 ├── tests/
 │   └── __init__.py
 │
-├── claudedocs/                 # Claude documentation (TODO: Add content)
 ├── .env                        # API keys storage (gitignored)
 ├── .gitignore
-├── .prettierignore
-├── .prettierrc
 ├── pyproject.toml              # Dependencies and project config
 ├── README.md
-└── ARCHITECTURE.md
+├── ARCHITECTURE.md             # This file
+└── PLANNING.md                 # Future features and roadmap
 ```
 
 ## Data Models
@@ -189,39 +156,15 @@ capim/
 ```python
 class APIKey(BaseModel):
     name: str
-    service: str
+    provider: str
     description: Optional[str]
     tags: List[str] = []
+    is_active: bool = False
     created_at: datetime
     updated_at: datetime
 ```
 
-### Settings Model
-
-```python
-class Settings(BaseModel):
-    backup_location: str = "./backups"
-    default_services: List[str] = []
-    display_masked: bool = True
-    auto_gitignore: bool = True
-    shell_format: str = "bash"
-```
-
-### Environment Model (NEW)
-
-```python
-class Environment(BaseModel):
-    """Claude API environment configuration."""
-    anthropic_default_haiku_model: str
-    anthropic_default_sonnet_model: str
-    anthropic_default_opus_model: str
-    anthropic_auth_token: str
-    anthropic_base_url: BaseURL
-    api_timeout_ms: int
-    claude_code_disable_nonessential_traffic: bool
-```
-
-### Provider Models (NEW)
+### Provider Models
 
 ```python
 Provider: TypeAlias = Literal["anthropic", "glm"]
@@ -244,28 +187,11 @@ class BaseURL(BaseModel):
 ### Currently Implemented Commands
 
 - `capi add` - Add new API key (interactive)
-- `capi list` - List keys with filters  
+- `capi list [--provider PROVIDER] [--tag TAG] [--search TEXT]` - List keys with filters
 - `capi delete KEY_NAME` - Delete key
-- `capi use` - Interactive key selection
-- `capi validate` - Validate Claude Code settings.json
-- `capi validate --report` - Display validation report as JSON
+- `capi use` - Interactive key selection and activation
+- `capi validate [--report]` - Validate Claude Code settings.json
 - `capi version` - Show version information
-
-### Planned Commands (Not Yet Implemented)
-
-- `capi show KEY_NAME` - Show key details
-- `capi update KEY_NAME` - Update key value or metadata
-- `capi export KEY_NAME` - Export single key
-- `capi export --all` - Export all keys
-- `capi export --service SERVICE` - Export by service
-- `capi backup [--password PASSWORD]` - Create backup
-- `capi backup list` - List available backups
-- `capi restore BACKUP_FILE` - Restore from backup
-- `capi config edit` - Edit settings.json interactively
-- `capi config show` - Display current settings
-- `capi config reset` - Reset to defaults
-- `capi security check` - Run security audit
-- `capi security fix` - Auto-fix permission issues
 
 ### Note on Command Name
 
@@ -277,23 +203,12 @@ capi = "cli.main:app"
 
 ## Workflow Examples
 
-### Validating Claude Code Settings (NEW)
-
-1. User runs `capi validate`
-2. System checks Claude Code installation
-3. Validates settings.json structure and environment variables
-4. If validation fails:
-   - Prompts user to create new settings file
-   - Generates proper settings.json with defaults
-   - Backs up existing settings if present
-5. Reports validation status with clear pass/fail indicators
-
 ### Adding a New API Key
 
 1. User runs `capi add`
 2. Questionary prompts for:
    - Key name
-   - Service type (with autocomplete)
+   - Provider type (with autocomplete)
    - API key value (masked input)
    - Description
    - Tags
@@ -306,19 +221,22 @@ capi = "cli.main:app"
 1. User runs `capi use`
 2. Questionary displays filtered list of keys
 3. User selects key with arrow keys
-4. Options presented:
-   - Copy to clipboard
-   - Export to environment
-   - Display value
-   - Cancel
+4. System activates the key by:
+   - Deactivating previously active key
+   - Marking selected key as active
+   - Exporting Claude Code settings with the new key
+5. Success message displayed
 
-### Creating Backup
+### Validating Claude Code Settings
 
-1. User runs `capi backup` (planned - not yet implemented)
-2. Prompts for password (optional)
-3. Creates encrypted archive
-4. Displays success with backup location
-5. Rich progress bar during encryption
+1. User runs `capi validate`
+2. System checks Claude Code installation
+3. Validates settings.json structure and environment variables
+4. If validation fails:
+   - Prompts user to create new settings file
+   - Generates proper settings.json with defaults
+   - Backs up existing settings if present
+5. Reports validation status with clear pass/fail indicators
 
 ## Security Considerations
 
@@ -327,7 +245,6 @@ capi = "cli.main:app"
 - `.env` must be 600 (owner read/write only)
 - `keys_metadata.json` must be 600
 - `settings.json` must be 600
-- Backup files encrypted with user password
 - Claude Code settings protected with automatic backup
 
 ### Git Safety
@@ -347,7 +264,7 @@ capi = "cli.main:app"
 ```toml
 [tool.poetry.dependencies]
 python = "^3.9"
-typer = "^0.12.0"
+typer = "^0.21.0"
 rich = "^13.7.0"
 questionary = "^2.0.0"
 python-dotenv = "^1.0.0"
@@ -372,7 +289,7 @@ The tool comes with pre-configured support for:
    - Models: claude-3-haiku, claude-3.5-sonnet, claude-3-opus
 
 2. **GLM (Zhipu AI)**
-   - Base URL: `https://api.z.ai/api/anthropic`
+   - Base URL: `https://open.bigmodel.cn/api/paas/v4/`
    - Models: glm-4.5, glm-4.6, glm-4.7
 
 ### Adding New Providers
@@ -383,16 +300,6 @@ To add a new provider:
 2. Add model mappings to `constans/providerModel.py`
 3. Add base URL to `constans/providerUrl.py`
 4. Implement provider-specific validation if needed
-
-## Future Enhancements (v2.0)
-
-- Cloud sync (encrypted storage in S3/Dropbox)
-- Team sharing with encrypted key exchange
-- API key rotation reminders
-- Usage analytics (when keys were last used)
-- Integration with password managers (1Password, Bitwarden)
-- Web UI dashboard
-- CI/CD integration commands
 
 ## Installation & Usage
 
@@ -412,6 +319,11 @@ capi add
 
 # List all keys
 capi list
+
+# List keys with filters
+capi list --provider anthropic
+capi list --tag production
+capi list --search "github"
 
 # Use a key
 capi use
@@ -437,14 +349,9 @@ capi validate
 # - Automatic backup of existing settings
 ```
 
+
 ## License
 
 MIT License
 
-## Author
 
-[Your Name]
-
-## Contributing
-
-See CONTRIBUTING.md for guidelines

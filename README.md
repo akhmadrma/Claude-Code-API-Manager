@@ -10,33 +10,34 @@ Interactive CLI tool for managing API keys with beautiful terminal UI and Claude
 - **Interactive Selection**: Beautiful terminal UI for key selection using Rich and Questionary
 - **Claude Settings Management**: Automatic Claude Code settings.json generation and validation
 - **Multi-Provider Support**: Built-in support for Anthropic and GLM API providers
+- **Search & Filter**: Filter keys by provider, tag, or text search
 - **Validation**: Comprehensive Claude Code configuration validation
 - **Security**: File permission checks and Git safety features
-
-### Planned Features (Not Yet Implemented)
-
-- Environment Export: Export keys to shell environment variables
-- Backup & Restore: Encrypted backup functionality for both API keys and settings
-- Search & Filter: Find keys by service, tags, or text
-- Update operations: Modify existing API key values or metadata
-- Show command: Display individual API key details
 
 ## Installation
 
 ```bash
-pip install capim
+pip install capi
 # or
-pipx install capim
+pipx install capi
 ```
 
 ## Quick Start
 
 ```bash
+# Copy .env.example to .env and you can customize claude dir
+cp .env.example .env
+
 # Add your first API key
 capi add
 
 # List all keys
 capi list
+
+# List keys with filters
+capi list --provider anthropic
+capi list --tag production
+capi list --search "github"
 
 # Use a key
 capi use
@@ -85,22 +86,12 @@ Supports multiple API providers with pre-configured models:
 ### Currently Implemented
 
 - `capi add` - Add new API key (interactive)
-- `capi list` - List keys with filters
+- `capi list` - List keys with filters (--provider, --tag, --search)
 - `capi delete KEY_NAME` - Delete key
-- `capi use` - Interactive key selection
+- `capi use` - Interactive key selection and activation
 - `capi validate` - Validate Claude Code settings.json
 - `capi validate --report` - Display validation report as JSON
 - `capi version` - Show version information
-
-### Planned Commands
-
-- `capi show KEY_NAME` - Show key details
-- `capi update KEY_NAME` - Update key value or metadata
-- `capi export KEY_NAME` - Export single key
-- `capi export --all` - Export all keys
-- `capi backup [--password PASSWORD]` - Create backup
-- `capi config edit` - Edit settings.json interactively
-- `capi security check` - Run security audit
 
 ## Project Structure
 
@@ -115,7 +106,8 @@ The project is organized into several key modules:
 
 ## Documentation
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
+- **README.md** (this file) - Overview and quick start guide
+- [**ARCHITECTURE.md**](ARCHITECTURE.md)  - Detailed architecture and implementation documentation
 
 ## License
 
