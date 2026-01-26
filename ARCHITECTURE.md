@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Project Name**: CAPIM (Cloud Code API Manager)
+**Project Name**: CAPI (Cloud Code API Manager)
 **Version**: 0.1.0
 **Purpose**: Interactive CLI tool for managing API keys with beautiful terminal UI and Claude Code settings integration
 **Target Users**: Developers managing multiple API keys across different services and Claude Code configurations

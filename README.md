@@ -1,4 +1,4 @@
-# CAPIM (Cloud Code API Manager)
+# CAPI (Cloud Code API Manager)
 
 Interactive CLI tool for managing API keys with beautiful terminal UI and Claude Code settings integration.
 
