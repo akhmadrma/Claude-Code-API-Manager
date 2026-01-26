@@ -34,7 +34,7 @@ class MetadataManager:
         api_data["name"] = str(api_data["name"])
 
         if "provider" not in api_data:
-            raise ValueError("provider field is required and must be a string") 
+            raise ValueError("provider field is required and must be a string")
         if "description" in api_data and api_data["description"] is not None:
             # if not :
             #     raise ValueError("description field must be a string or None")

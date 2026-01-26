@@ -15,9 +15,9 @@ console = Console()
 
 
 def use_cmd(
-    name: Optional[str] = typer.Option(None, "--name", "-n", help="Name of the key to use"),
+    name: Optional[str] = typer.Option(None, "--name", help="Name of the key to use"),
     interactive: bool = typer.Option(
-        True, "--interactive/--no-interactive", "-i/-I", help="Interactive mode (default: True)"
+        True, "--interactive/--no-interactive", help="Interactive mode (default: True)"
     ),
 ):
     """
@@ -43,10 +43,9 @@ def use_cmd(
             all_metadata = metadata_manager.list_all_metadata()
             if not all_metadata:
                 console.print(
-                "[yellow]No API keys found. Use 'cloudcode add' to add your first key.[/yellow]"
+                    "[yellow]No API keys found. Use 'cloudcode add' to add your first key.[/yellow]"
                 )
                 return
-            
 
             # Create beautiful table
             table = Table(title="API Keys")
@@ -61,7 +60,7 @@ def use_cmd(
             for key in all_metadata.values():
                 # Mask the key
                 masked_key = mask_key(str(key_manager.get_key_value(key.name)))
-                
+
                 if key.status == "active":
                     key.status = f"[green]active[/green]"
 
@@ -74,13 +73,13 @@ def use_cmd(
                     key.status,
                     key.created_at.strftime("%Y-%m-%d") if key.created_at else "N/A",
                 )
+                continue
 
             console.print(table)
             console.print(f"\n[dim]Showing {len(all_metadata.values())} key(s)[/dim]")
 
             # Interactive mode with beautiful prompts
             console.print(Panel.fit("[bold cyan]Use Key[/bold cyan]"))
-            
 
             # Prompt for key name
             name = text(
@@ -101,23 +100,27 @@ def use_cmd(
                 return
 
             # get active key
-            previous_active_key = key_manager.get_active_key()
-            if previous_active_key.name == name:
-                console.print("[red]Keys is already active.[/red]")
-                return
+            try:
+                previous_active_key = key_manager.get_active_key()
+                if previous_active_key.name == name:
+                    console.print("[red]Keys is already active.[/red]")
+                    return
+                previous_active_key = key_manager.set_inactive_key(previous_active_key.name)
+                metadata_manager.save_metadata(previous_active_key)
+
+            except KeyError:
+                previous_active_key = None
             # deactife previous key
-            previous_active_key = key_manager.set_inactive_key(previous_active_key.name)
-            metadata_manager.save_metadata (previous_active_key)
 
             # actibate new key
             current_active_key = key_manager.set_active_key(name)
-            metadata_manager.save_metadata (current_active_key)
+            metadata_manager.save_metadata(current_active_key)
 
-            exported_settings = export_manager.export_settings(key_value,key_metadata.provider)
+            exported_settings = export_manager.export_settings(key_value, key_metadata.provider)
             if not exported_settings:
                 console.print("[red]Failed to export settings.[/red]")
                 return
-            console.print(f'[green]Successfully activated key {name}[/green]')
+            console.print(f"[green]Successfully activated key {name}[/green]")
 
         else:
             console.print("[red]Key name not provided.[/red]")

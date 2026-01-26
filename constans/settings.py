@@ -1,6 +1,6 @@
 # The Dictionary for Settings.json
 # TODO still dont interact with actual settings
-SETTINGS_DICT : object = {
+SETTINGS_DICT: object = {
     "env": {
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": str,
         "ANTHROPIC_DEFAULT_SONNET_MODEL": str,

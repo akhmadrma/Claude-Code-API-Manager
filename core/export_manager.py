@@ -25,11 +25,13 @@ class ExportClaudeSettings:
             settings_path: Path to Claude settings file (defaults to ~/.claude/settings.json)
         """
         self.settings_path = (
-            settings_path or Path.home() / os.getenv("DEFAULT_CLAUDE_DIR", "test") / "settings.json"
+            settings_path or Path.home() / os.getenv("DEFAULT_CLAUDE_DIR", ".claude") / "settings.json"
         )
 
     ## TODO replace default provider with anthropic
-    def export_settings(self, api_keys: str, provider: Provider = "glm", backup: bool = False) -> Path:
+    def export_settings(
+        self, api_keys: str, provider: Provider = "anthropic", backup: bool = False
+    ) -> Path:
         """
         Export API keys to Claude settings file.
 
@@ -98,7 +100,7 @@ class ExportClaudeSettings:
             anthropic_default_sonnet_model=model.to_values()[1],
             anthropic_default_opus_model=model.to_values()[2],
             anthropic_auth_token=api_keys or "placeholder-token",
-            anthropic_base_url= base_url,
+            anthropic_base_url=base_url,
             api_timeout_ms=30000,
             claude_code_disable_nonessential_traffic=False,
         )

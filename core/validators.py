@@ -3,14 +3,17 @@
 import json
 import os
 from pathlib import Path
-from typing import  Dict, Any, TypedDict, NotRequired
+from typing import Dict, Any, TypedDict, NotRequired
+from rich.console import Console
 
 from dotenv import load_dotenv
 
+console = Console()
 
 
 class EnvironmentVariables(TypedDict):
     """Environment variables section of settings.json."""
+
     ANTHROPIC_DEFAULT_HAIKU_MODEL: NotRequired[str]
     ANTHROPIC_DEFAULT_SONNET_MODEL: NotRequired[str]
     ANTHROPIC_DEFAULT_OPUS_MODEL: NotRequired[str]
@@ -22,6 +25,7 @@ class EnvironmentVariables(TypedDict):
 
 class ClaudeSettings(TypedDict):
     """Type definition for Claude Code settings.json."""
+
     env: NotRequired[EnvironmentVariables]
     alwaysThinkingEnabled: NotRequired[bool]
 
@@ -35,13 +39,12 @@ class ValidationError(Exception):
         super().__init__(self.message)
 
 
-
-
 class ConfigValidator:
     """Validator for Claude Code settings.json configuration."""
+
     load_dotenv(Path(__file__).parent.parent / ".env")
 
-    DEFAULT_CLAUDE_DIR = Path.home() / os.getenv("DEFAULT_CLAUDE_DIR", "test")
+    DEFAULT_CLAUDE_DIR = Path.home() / os.getenv("DEFAULT_CLAUDE_DIR", ".claude")
     SETTINGS_FILE = "settings.json"
     SETTINGS_EXAMPLE = "settings.example.json"
 
@@ -58,7 +61,7 @@ class ConfigValidator:
         "ANTHROPIC_AUTH_TOKEN",
         "ANTHROPIC_BASE_URL",
         "API_TIMEOUT_MS",
-        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
     ]
 
     @classmethod
@@ -111,7 +114,7 @@ class ConfigValidator:
             raise ValidationError(f"Settings file not found: {str(settings_path)}", "config")
 
         try:
-            with open(settings_path, 'r', encoding='utf-8') as f:
+            with open(settings_path, "r", encoding="utf-8") as f:
                 settings: ClaudeSettings = json.load(f)
         except json.JSONDecodeError as e:
             raise ValidationError(f"Invalid JSON in settings file: {e}", "config")
@@ -136,16 +139,16 @@ class ConfigValidator:
         # Validate top-level keys
         # Note: TypedDict is erased at runtime, so json.load() returns a regular dict
         # We don't need isinstance check since ClaudeSettings is always a dict type
-        
+
         # Check for unknown keys (warn but don't fail)
         known_keys = set(cls.REQUIRED_TOP_LEVEL_KEYS + cls.OPTIONAL_TOP_LEVEL_KEYS)
-        unknown_keys  = set(settings.keys()) - known_keys
+        unknown_keys = set(settings.keys()) - known_keys
         if unknown_keys:
-            raise ValidationError(f"Unknown keys in settings: {', '.join(unknown_keys)}", "config")
+            console.log(f"Unknown keys in settings: {', '.join(unknown_keys)}", style="yellow")
 
         # Validate env section if present
         if "env" in settings:
-            
+
             # Check for unknown env vars
             known_env = set(cls.REQUIRED_ENV_VARS + cls.OPTIONAL_ENV_VARS)
             unknown_env = set(settings["env"].keys()) - known_env
@@ -187,12 +190,13 @@ class ConfigValidator:
             except ValueError:
                 errors.append("API_TIMEOUT_MS must be an integer")
 
-
         # Validate ANTHROPIC_AUTH_TOKEN format if present
         if "ANTHROPIC_AUTH_TOKEN" in env and env["ANTHROPIC_AUTH_TOKEN"]:
             token = env["ANTHROPIC_AUTH_TOKEN"]
             if len(token) < 20:
-                errors.append("ANTHROPIC_AUTH_TOKEN seems too short (should be at least 20 characters)")
+                errors.append(
+                    "ANTHROPIC_AUTH_TOKEN seems too short (should be at least 20 characters)"
+                )
 
         # Validate ANTHROPIC_BASE_URL format if present
         if "ANTHROPIC_BASE_URL" in env and env["ANTHROPIC_BASE_URL"]:
@@ -210,7 +214,7 @@ class ConfigValidator:
         Returns:
             (is_valid, errors) tuple
         """
-        errors : list[str] = []
+        errors: list[str] = []
 
         # Check installation
         installed, msg = cls.validate_installation()
@@ -252,7 +256,7 @@ class ConfigValidator:
             "claude_dir": str(cls.get_claude_dir()),
             "settings_path": str(cls.get_settings_path()),
             "installed": cls.is_claude_installed(),
-            "settings_exists": cls.settings_exists()
+            "settings_exists": cls.settings_exists(),
         }
 
         if is_valid:

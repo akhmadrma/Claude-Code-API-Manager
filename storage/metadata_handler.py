@@ -58,9 +58,7 @@ class MetadataHandler:
         """
         try:
             self.ensure_metadata_file()
-            self.metadata_path.write_text(
-                json.dumps(data, indent=2, default=str)
-            )
+            self.metadata_path.write_text(json.dumps(data, indent=2, default=str))
             self.metadata_path.chmod(0o600)
             return True
         except Exception as e:
@@ -123,7 +121,7 @@ class MetadataHandler:
         if not self.metadata_path.exists():
             return None
 
-        backup_path = self.metadata_path.with_suffix('.json.backup')
+        backup_path = self.metadata_path.with_suffix(".json.backup")
         try:
             backup_path.write_text(self.metadata_path.read_text())
             backup_path.chmod(0o600)
@@ -142,7 +140,7 @@ class MetadataHandler:
             True if successful
         """
         if backup_path is None:
-            backup_path = self.metadata_path.with_suffix('.json.backup')
+            backup_path = self.metadata_path.with_suffix(".json.backup")
 
         if not backup_path.exists():
             return False

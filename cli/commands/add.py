@@ -14,11 +14,12 @@ console = Console()
 
 
 def add_cmd(
-    name: str = typer.Option(None, "--name", "-n", help="Key name/identifier"),
-    provider: str = typer.Option(None, "--provider", "-s", help="provider type"),
-    interactive: bool = typer.Option(True, "--interactive/--no-interactive", "-i/-I",
-                                     help="Interactive mode (default: True)"),
-) :
+    name: str = typer.Option(None, "--name", help="Key name/identifier"),
+    provider: str = typer.Option(None, "--provider", help="provider type"),
+    interactive: bool = typer.Option(
+        True, "--interactive/--no-interactive", help="Interactive mode (default: True)"
+    ),
+):
     """
     Add a new API key to storage.
 
@@ -53,10 +54,7 @@ def add_cmd(
             # Prompt for provider type
             if not provider:
                 providers = PROVIDERS
-                provider = select(
-                    "Select provider type:",
-                    choices=providers
-                ).ask()
+                provider = select("Select provider type:", choices=providers).ask()
 
                 if not provider:
                     console.print("[red]Cancelled[/red]")
@@ -64,8 +62,7 @@ def add_cmd(
 
             # Prompt for API key value (masked)
             key_value = password(
-                "Enter the API key value:",
-                instruction="(input will be hidden)"
+                "Enter the API key value:", instruction="(input will be hidden)"
             ).ask()
 
             if not key_value:
@@ -73,29 +70,31 @@ def add_cmd(
                 raise typer.Exit(1)
 
             # Prompt for description (optional)
-            description = text(
-                "Enter a description (optional):",
-                default=""
-            ).ask() or None
+            description = text("Enter a description (optional):", default="").ask() or None
 
             # Prompt for tags (optional)
-            tags_input = text(
-                "Enter tags separated by commas (optional):",
-                default=""
-            ).ask() or None
+            tags_input = (
+                text("Enter tags separated by commas (optional):", default="").ask() or None
+            )
 
             tags = [t.strip() for t in tags_input.split(",")] if tags_input else []
 
         else:
             # Non-interactive mode - require arguments
             if not name or not provider:
-                console.print("[red]Error: --name and --provider required in non-interactive mode[/red]")
+                console.print(
+                    "[red]Error: --name and --provider required in non-interactive mode[/red]"
+                )
                 raise typer.Exit(1)
 
             # For now, we can't securely get the key value in non-interactive mode
             # without exposing it in shell history. This is a design decision.
-            console.print("[yellow]Warning: Non-interactive mode is not recommended for security[/yellow]")
-            console.print("[yellow]Please use interactive mode to avoid exposing keys in shell history[/yellow]")
+            console.print(
+                "[yellow]Warning: Non-interactive mode is not recommended for security[/yellow]"
+            )
+            console.print(
+                "[yellow]Please use interactive mode to avoid exposing keys in shell history[/yellow]"
+            )
             raise typer.Exit(1)
 
         # Validate and add the key
@@ -113,14 +112,16 @@ def add_cmd(
             metadata_manager.save_metadata(api_key)
 
             # Success message
-            console.print(Panel.fit(
-                f"[bold green]✓ API key added successfully![/bold green]\n\n"
-                f"[cyan]Name:[/cyan] {name}\n"
-                f"[cyan]provider:[/cyan] {provider}\n"
-                f"[cyan]Description:[/cyan] {description or 'N/A'}\n"
-                f"[cyan]Tags:[/cyan] {', '.join(tags) if tags else 'None'}",
-                title="Success"
-            ))
+            console.print(
+                Panel.fit(
+                    f"[bold green]✓ API key added successfully![/bold green]\n\n"
+                    f"[cyan]Name:[/cyan] {name}\n"
+                    f"[cyan]provider:[/cyan] {provider}\n"
+                    f"[cyan]Description:[/cyan] {description or 'N/A'}\n"
+                    f"[cyan]Tags:[/cyan] {', '.join(tags) if tags else 'None'}",
+                    title="Success",
+                )
+            )
 
         except ValidationError as e:
             console.print(f"[red]Validation error: {e.message}[/red]")

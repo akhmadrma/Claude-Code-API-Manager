@@ -41,8 +41,7 @@ class ShellExporter:
             Multi-line export commands
         """
         return "\n".join(
-            cls.export_single(name, value, shell_format)
-            for name, value in keys.items()
+            cls.export_single(name, value, shell_format) for name, value in keys.items()
         )
 
     @classmethod

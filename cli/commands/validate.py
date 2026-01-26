@@ -11,9 +11,7 @@ from core.export_manager import ExportClaudeSettings
 
 
 def validate_cmd(
-    # json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
-    # quiet: bool = typer.Option(False, "--quiet", "-q", help="Only exit code (0=valid, 1=invalid)"),
-    report: bool = typer.Option(False, "--report", "-r", help="Display validation report JSON"),
+    report: bool = typer.Option(False, "--report", help="Display validation report JSON"),
 ):
     """Validate Claude Code settings.json configuration."""
 
@@ -26,10 +24,10 @@ def validate_cmd(
 
     # validate instalation
     validateInstalation = ConfigValidator.validate_installation()
-    echo("✅ Validation Instalation: PASSED")
     if not validateInstalation[0]:
         echo(f"❌ Validation: FAILED\n{validateInstalation[1]}")
         raise Exit(code=1)
+    echo("✅ Validation Instalation: PASSED")
 
     # validate settings.json
     try:
@@ -40,7 +38,7 @@ def validate_cmd(
             "Do you want to create a new settings file? (y/n): ",
             default="y",
             # fixme : Type of parameter "x" is unknown
-            validate=lambda x: x.lower() in ["y", "n"], #
+            validate=lambda x: x.lower() in ["y", "n"],  #
         ).ask()
         if answer == "y":
             # ConfigValidator.create_settings()

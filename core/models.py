@@ -2,12 +2,10 @@
 
 from datetime import datetime
 from typing import List, Optional
-from constans.providerUrl import  BaseURL
+from constans.providerUrl import BaseURL
 from pydantic import BaseModel, Field, field_validator
 
 from constans.providers import Provider
-
-
 
 
 class Environment(BaseModel):
@@ -26,8 +24,6 @@ class Environment(BaseModel):
     claude_code_disable_nonessential_traffic: bool = Field(
         default=False, description="Disable telemetry and non-essential network traffic"
     )
-
-
 
 
 class APIKey(BaseModel):

@@ -120,4 +120,4 @@ class EnvHandler:
         Returns:
             Path to backup .env file
         """
-        return self.env_path.with_suffix('.env.backup')
+        return self.env_path.with_suffix(".env.backup")

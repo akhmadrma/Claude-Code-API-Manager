@@ -12,9 +12,10 @@ console = Console()
 
 
 def delete_cmd(
-    name: str = typer.Option(None, "--name", "-n", help="Key name/identifier"),
-    interactive: bool = typer.Option(True, "--interactive/--no-interactive", "-i/-I",
-                                     help="Interactive mode (default: True)"),
+    name: str = typer.Option(None, "--name", help="Key name/identifier"),
+    interactive: bool = typer.Option(
+        True, "--interactive/--no-interactive", help="Interactive mode (default: True)"
+    ),
 ):
     """
     Delete an API key from storage.

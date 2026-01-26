@@ -12,8 +12,8 @@ console = Console()
 
 
 def list_cmd(
-    provider: Optional[str] = typer.Option(None, "--service", "-s", help="Filter by service"),
-    tag: Optional[str] = typer.Option(None, "--tag", "-t", help="Filter by tag"),
+    provider: Optional[str] = typer.Option(None, "--service", help="Filter by service"),
+    tag: Optional[str] = typer.Option(None, "--tag", help="Filter by tag"),
     search: Optional[str] = typer.Option(None, "--search", help="Search in name/description"),
 ):
     """
@@ -70,7 +70,7 @@ def list_cmd(
         for key in filtered_keys:
             # Mask the key
             masked_key = mask_key(str(key_manager.get_key_value(key.name)))
-            
+
             if key.status == "active":
                 key.status = f"[green]active[/green]"
 

@@ -10,6 +10,7 @@ PROVIDER_URLS: Final[dict[Provider, str]] = {
     "glm": "https://api.z.ai/api/anthropic",
 }
 
+
 class BaseURL(BaseModel):
     """
     Base URL configuration for different API providers.
@@ -17,7 +18,8 @@ class BaseURL(BaseModel):
     This model manages API endpoint URLs for various services, providing
     a centralized way to handle different API providers and their endpoints.
     """
-    provider : Provider
+
+    provider: Provider
     value: str = Field(
         default=PROVIDER_URLS["anthropic"], description="The base URL for the API endpoint"
     )

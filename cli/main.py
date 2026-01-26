@@ -21,13 +21,10 @@ app = typer.Typer(
 )
 
 
-
 @app.command("version")
 def version():
     """Show version information."""
     echo("Cloud Code API Manager v1.0.0")
-
-
 
 
 # Register commands
@@ -39,10 +36,10 @@ app.command("use")(use_cmd)
 
 
 @app.callback()
-def main(
+def callback(
     ctx: typer.Context,
     verbose: bool = typer.Option(False, "--verbose", help="Enable verbose output"),
-    config: Optional[str] = typer.Option(None, "--config", "-c", help="Path to config file"),
+    config: Optional[str] = typer.Option(None, "--config", help="Path to config file"),
 ):
     """
     Cloud Code API Manager - Interactive CLI for API key management
