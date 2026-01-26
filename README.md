@@ -26,7 +26,7 @@ pipx install capi
 
 ```bash
 # Copy .env.example to .env and you can customize claude dir
-cp .env.example .env
+cp .env.example ~/.capi/.env
 
 # Add your first API key
 capi add

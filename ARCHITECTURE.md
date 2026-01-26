@@ -42,6 +42,7 @@
   - Updated timestamp
 - Enables rich display without exposing actual key values
 - Supports filtering and search functionality
+- Stored in `.capi/keys_metadata.json`
 
 ### 3. Search and Filter
 
@@ -66,6 +67,8 @@
 - **Secure Display**:
   - Masked key values in list view
   - Optional reveal with confirmation
+- **STORAGE Encryption**:
+  - Stored in .capi/.env
 
 ### 5. Claude Code Integration
 

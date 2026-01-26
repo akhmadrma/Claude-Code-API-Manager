@@ -76,14 +76,16 @@ class MetadataManager:
         Args:
             metadata_path: Path to metadata JSON file
         """
-        self.metadata_path = metadata_path or Path.cwd() / "keys_metadata.json"
+        self.metadata_path = metadata_path or Path.home() / ".capi/keys_metadata.json"
         self._ensure_metadata_file()
 
     def _ensure_metadata_file(self):
         """Create metadata file if it doesn't exist."""
         if not self.metadata_path.exists():
-            self.metadata_path.write_text("{}")
-            # Set secure permissions
+            # Create parent directory if it doesn't exist
+            self.metadata_path.parent.mkdir(parents=True, exist_ok=True)
+            # Create file with secure permissions
+            self.metadata_path.touch()
             self.metadata_path.chmod(0o600)
 
     def save_metadata(self, api_key: APIKey):

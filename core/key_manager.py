@@ -22,14 +22,16 @@ class KeyManager:
         Args:
             env_path: Path to .env file (defaults to ./.env)
         """
-        self.env_path = env_path or Path.cwd() / ".env"
+        self.env_path = env_path or Path.home() / ".capi/.env"
         self._ensure_env_file()
 
     def _ensure_env_file(self):
         """Create .env file if it doesn't exist."""
         if not self.env_path.exists():
-            self.env_path.touch(mode=0o600)
-            # Set proper permissions
+            # Create parent directory if it doesn't exist
+            self.env_path.parent.mkdir(parents=True, exist_ok=True)
+            # Create file with secure permissions
+            self.env_path.touch()
             os.chmod(self.env_path, 0o600)
     def add_key(
         self,
