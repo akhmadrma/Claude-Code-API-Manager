@@ -149,30 +149,23 @@ def use_cmd(
         print(f"Error: {e}")
 
 
-def _validate_name(value: str) -> bool:
+def _validate_name(value: str):
     """
-    Validate API key name.
+    Validate API key name for questionary prompt.
 
     Args:
         value: API key name to validate
 
     Returns:
-        True if valid, False otherwise
-
-    Raises:
-        typer.Exit: If validation fails
+        True if valid, error message string if invalid
     """
+    # Check for whitespace characters
     if " " in value or "\t" in value or "\n" in value:
-        console.print(f"[red]Error: Key name cannot contain spaces or whitespace characters[/red]")
-        console.print(f"[yellow]Invalid name: '{value}'[/yellow]")
-        raise typer.Exit(1)
+        return "Key name cannot contain spaces or whitespace characters"
 
-    # Check if key already exists
+    # Check if key exists
     key_manager = KeyManager()
-    result = key_manager.key_exists(value)
-
-    if not result:
-        console.print(f"[red]Key '{value}' not exists[/red]")
-        raise typer.Exit(1)
+    if not key_manager.key_exists(value):
+        return f"Key '{value}' does not exist"
 
     return True
