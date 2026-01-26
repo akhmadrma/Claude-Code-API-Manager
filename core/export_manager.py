@@ -28,7 +28,8 @@ class ExportClaudeSettings:
             settings_path or Path.home() / os.getenv("DEFAULT_CLAUDE_DIR", "test") / "settings.json"
         )
 
-    def export_settings(self, api_keys: str, backup: bool = False) -> Path:
+    ## TODO replace default provider with anthropic
+    def export_settings(self, api_keys: str, provider: Provider = "glm", backup: bool = False) -> Path:
         """
         Export API keys to Claude settings file.
 
@@ -50,7 +51,7 @@ class ExportClaudeSettings:
             self._backup_settings()
 
         # Prepare settings data
-        settings_data = self._prepare_settings(api_keys)
+        settings_data = self._prepare_settings(api_keys, provider)
 
         # Write to file
         try:
@@ -78,8 +79,7 @@ class ExportClaudeSettings:
         except Exception as e:
             raise IOError(f"Failed to create backup: {e}") from e
 
-    ## TODO replace default provider with anthropic
-    def _prepare_settings(self, api_keys: str, provider: Provider = "glm") -> Dict[str, Any]:
+    def _prepare_settings(self, api_keys: str, provider: Provider = "anthropic") -> Dict[str, Any]:
         """
         Prepare Claude settings structure.
 

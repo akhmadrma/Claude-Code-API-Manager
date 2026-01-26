@@ -5,6 +5,7 @@ from questionary import password, text, select
 from rich.console import Console
 from rich.panel import Panel
 
+from constans.providers import PROVIDERS
 from core.key_manager import KeyManager
 from core.metadata_manager import MetadataManager
 from core.validators import ValidationError
@@ -14,7 +15,7 @@ console = Console()
 
 def add_cmd(
     name: str = typer.Option(None, "--name", "-n", help="Key name/identifier"),
-    service: str = typer.Option(None, "--service", "-s", help="Service type"),
+    provider: str = typer.Option(None, "--provider", "-s", help="provider type"),
     interactive: bool = typer.Option(True, "--interactive/--no-interactive", "-i/-I",
                                      help="Interactive mode (default: True)"),
 ) :
@@ -22,7 +23,7 @@ def add_cmd(
     Add a new API key to storage.
 
     If run interactively (default), prompts for all information.
-    Otherwise, requires name and service as arguments.
+    Otherwise, requires name and provider as arguments.
     """
     try:
         key_manager = KeyManager()
@@ -33,6 +34,7 @@ def add_cmd(
             console.print(Panel.fit("[bold cyan]Add New API Key[/bold cyan]"))
 
             # Prompt for key name
+            # TODO : Add validation for spacing, .env cannot have spaces
             if not name:
                 name = text(
                     "Enter a name for this key:",
@@ -48,15 +50,15 @@ def add_cmd(
                 console.print(f"[red]Key '{name}' already exists[/red]")
                 raise typer.Exit(1)
 
-            # Prompt for service type
-            if not service:
-                services = ["OpenAI", "GitHub", "AWS", "Google", "Stripe", "Slack", "Other"]
-                service = select(
-                    "Select service type:",
-                    choices=services
+            # Prompt for provider type
+            if not provider:
+                providers = PROVIDERS
+                provider = select(
+                    "Select provider type:",
+                    choices=providers
                 ).ask()
 
-                if not service:
+                if not provider:
                     console.print("[red]Cancelled[/red]")
                     raise typer.Exit()
 
@@ -86,8 +88,8 @@ def add_cmd(
 
         else:
             # Non-interactive mode - require arguments
-            if not name or not service:
-                console.print("[red]Error: --name and --service required in non-interactive mode[/red]")
+            if not name or not provider:
+                console.print("[red]Error: --name and --provider required in non-interactive mode[/red]")
                 raise typer.Exit(1)
 
             # For now, we can't securely get the key value in non-interactive mode
@@ -101,9 +103,10 @@ def add_cmd(
             api_key = key_manager.add_key(
                 name=name,
                 key_value=key_value,
-                service=service,
+                ## fixme: Type "str" is not assignable to type "Provider"
+                provider=provider,
                 description=description,
-                tags=tags
+                tags=tags,
             )
 
             # Save metadata
@@ -113,7 +116,7 @@ def add_cmd(
             console.print(Panel.fit(
                 f"[bold green]✓ API key added successfully![/bold green]\n\n"
                 f"[cyan]Name:[/cyan] {name}\n"
-                f"[cyan]Service:[/cyan] {service}\n"
+                f"[cyan]provider:[/cyan] {provider}\n"
                 f"[cyan]Description:[/cyan] {description or 'N/A'}\n"
                 f"[cyan]Tags:[/cyan] {', '.join(tags) if tags else 'None'}",
                 title="Success"

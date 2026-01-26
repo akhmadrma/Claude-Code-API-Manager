@@ -5,6 +5,8 @@ from typing import List, Optional
 from constans.providerUrl import  BaseURL
 from pydantic import BaseModel, Field, field_validator
 
+from constans.providers import Provider
+
 
 
 
@@ -32,7 +34,7 @@ class APIKey(BaseModel):
     """API Key model with metadata."""
 
     name: str = Field(..., description="Unique identifier for the API key")
-    service: str = Field(..., description="Service type (OpenAI, GitHub, AWS, etc.)")
+    provider: Provider = Field(..., description="Service type (OpenAI, GitHub, AWS, etc.)")
     description: Optional[str] = Field(None, description="User-defined purpose")
     tags: List[str] = Field(default_factory=list, description="Categorization tags")
     created_at: datetime = Field(default_factory=datetime.now, description="Creation timestamp")
@@ -46,12 +48,12 @@ class APIKey(BaseModel):
             raise ValueError("name cannot be empty")
         return v.strip()
 
-    @field_validator("service")
+    @field_validator("provider")
     @classmethod
-    def service_must_not_be_empty(cls, v: str) -> str:
-        """Validate that service is not empty."""
+    def provider_must_not_be_empty(cls, v: str) -> str:
+        """Validate that provider is not empty."""
         if not v.strip():
-            raise ValueError("service cannot be empty")
+            raise ValueError("provider cannot be empty")
         return v.strip()
 
 

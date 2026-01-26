@@ -12,7 +12,7 @@ console = Console()
 
 
 def list_cmd(
-    service: Optional[str] = typer.Option(None, "--service", "-s", help="Filter by service"),
+    provider: Optional[str] = typer.Option(None, "--service", "-s", help="Filter by service"),
     tag: Optional[str] = typer.Option(None, "--tag", "-t", help="Filter by tag"),
     search: Optional[str] = typer.Option(None, "--search", help="Search in name/description"),
 ):
@@ -21,7 +21,7 @@ def list_cmd(
 
     Keys are displayed in a formatted table with masked values.
     """
-    
+
     try:
         metadata_manager = MetadataManager()
         key_manager = KeyManager()
@@ -30,14 +30,16 @@ def list_cmd(
         all_metadata = metadata_manager.list_all_metadata()
 
         if not all_metadata:
-            console.print("[yellow]No API keys found. Use 'cloudcode add' to add your first key.[/yellow]")
+            console.print(
+                "[yellow]No API keys found. Use 'cloudcode add' to add your first key.[/yellow]"
+            )
             return
 
         # Apply filters
         filtered_keys = list(all_metadata.values())
 
-        if service:
-            filtered_keys = [k for k in filtered_keys if k.service.lower() == service.lower()]
+        if provider:
+            filtered_keys = [k for k in filtered_keys if k.provider.lower() == provider.lower()]
 
         if tag:
             filtered_keys = [k for k in filtered_keys if tag.lower() in [t.lower() for t in k.tags]]
@@ -45,9 +47,10 @@ def list_cmd(
         if search:
             search_lower = search.lower()
             filtered_keys = [
-                k for k in filtered_keys
-                if search_lower in k.name.lower() or
-                (k.description and search_lower in k.description.lower())
+                k
+                for k in filtered_keys
+                if search_lower in k.name.lower()
+                or (k.description and search_lower in k.description.lower())
             ]
 
         if not filtered_keys:
@@ -65,15 +68,15 @@ def list_cmd(
 
         for key in filtered_keys:
             # Mask the key
-            masked_key = mask_key(str(key_manager.get_key_value(key.name))) 
+            masked_key = mask_key(str(key_manager.get_key_value(key.name)))
 
             table.add_row(
                 key.name,
-                key.service,
+                key.provider,
                 masked_key,
                 key.description or "N/A",
                 ", ".join(key.tags) if key.tags else "None",
-                key.created_at.strftime("%Y-%m-%d") if key.created_at else "N/A"
+                key.created_at.strftime("%Y-%m-%d") if key.created_at else "N/A",
             )
 
         console.print(table)

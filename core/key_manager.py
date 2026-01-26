@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 from dotenv import load_dotenv, set_key, unset_key
+
+from constans.providers import Provider
 from .models import APIKey
 from .validators import KeyValidator
 
@@ -28,9 +30,15 @@ class KeyManager:
             # Set proper permissions
             os.chmod(self.env_path, 0o600)
 
-#fixme pylint bug
-    def add_key(self, name: str, key_value: str, service: str,
-                description: Optional[str] = None, tags: Optional[List[str]] = None) -> APIKey:
+    # fixme pylint bug
+    def add_key(
+        self,
+        name: str,
+        key_value: str,
+        provider: Provider,
+        description: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> APIKey:
         """
         Add a new API key.
 
@@ -49,19 +57,14 @@ class KeyManager:
             ValueError: If key already exists
         """
         # Validate key format
-        KeyValidator.validate(key_value, service)
+        KeyValidator.validate(key_value, provider)
 
         # Check if key already exists
         if self.key_exists(name):
             raise ValueError(f"Key '{name}' already exists")
 
         # Create APIKey model
-        api_key = APIKey(
-            name=name,
-            service=service,
-            description=description,
-            tags=tags or []
-        )
+        api_key = APIKey(name=name, provider=provider, description=description, tags=tags or [])
 
         # Store in .env file
         set_key(str(self.env_path), name, key_value)
@@ -89,9 +92,14 @@ class KeyManager:
 
         return value
 
-    def update_key(self, name: str, new_value: Optional[str] = None,
-                   service: Optional[str] = None, description: Optional[str] = None,
-                   tags: Optional[List[str]] = None) -> APIKey:
+    def update_key(
+        self,
+        name: str,
+        new_value: Optional[str] = None,
+        provider: Optional[Provider] = None,
+        description: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> APIKey:
         """
         Update an existing API key.
 
@@ -109,27 +117,21 @@ class KeyManager:
             KeyError: If key not found
             ValidationError: If new value format is invalid
         """
+        ## fixme : still not effective
         if not self.key_exists(name):
             raise KeyError(f"Key '{name}' not found")
 
-        # fixme pylint, pylance bug
-        current_value = self.get_key_value(name)
+        provider_to_check = provider or self._get_provider_from_metadata(name)
 
-        if new_value:
+        if new_value and provider_to_check:
             # Validate new value
-            service_to_check = service or self._get_service_from_metadata(name)
-            KeyValidator.validate(new_value, service_to_check or "unknown")
+            KeyValidator.validate(new_value, provider_to_check)
             set_key(str(self.env_path), name, new_value)
-            # fixme pylint bug
-            current_value = new_value
 
         # Update metadata (would be handled by MetadataManager)
         # For now, return basic APIKey
         return APIKey(
-            name=name,
-            service=service or "unknown",
-            description=description,
-            tags=tags or []
+            name=name, provider=provider or "anthropic", description=description, tags=tags or []
         )
 
     def delete_key(self, name: str) -> bool:
@@ -164,9 +166,9 @@ class KeyManager:
             Dictionary of key names
         """
         load_dotenv(self.env_path)
-        return {k: k for k in os.environ if k.startswith(('sk-', 'ghp_', 'AKIA', 'API_'))}
+        return {k: k for k in os.environ if k.startswith(("sk-", "ghp_", "AKIA", "API_"))}
 
-    def _get_service_from_metadata(self, name: str) -> Optional[str]:
+    def _get_provider_from_metadata(self, name: str) -> Optional[Provider]:
         """Get service type from metadata (placeholder)."""
         # This would interact with MetadataManager
         return None

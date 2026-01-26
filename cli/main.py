@@ -4,6 +4,8 @@ from typing import Optional
 from typer import echo
 import typer
 
+from cli.commands.use import use_cmd
+
 # Import command modules
 from .commands.delete import delete_cmd
 from .commands.add import add_cmd
@@ -33,6 +35,7 @@ app.command("add")(add_cmd)
 app.command("list")(list_cmd)
 app.command("delete")(delete_cmd)
 app.command("validate")(validate_cmd)
+app.command("use")(use_cmd)
 
 
 @app.callback()

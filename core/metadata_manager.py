@@ -3,15 +3,18 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 from typing_extensions import TypedDict
+
+from constans.providers import Provider
 from .models import APIKey
 
 
 class MetadataDict(TypedDict, total=False):
     """Type definition for metadata storage format."""
+
     name: str
-    service: str
+    provider: Provider
     description: Optional[str]
     tags: List[str]
     created_at: datetime
@@ -25,46 +28,44 @@ class MetadataManager:
     def _metadata_to_api_key(api_data: MetadataDict) -> APIKey:
         """Convert metadata dict to APIKey object."""
         # Validate and cast string fields
-        if 'name' not in api_data :
+        if "name" not in api_data:
             raise ValueError("name field is required and must be a string")
-        api_data['name'] = str(api_data['name'])
-        
-        if 'service' not in api_data :
-            raise ValueError("service field is required and must be a string")
-        api_data['service'] = str(api_data['service'])
-        
-        if 'description' in api_data and api_data['description'] is not None:
+        api_data["name"] = str(api_data["name"])
+
+        if "provider" not in api_data:
+            raise ValueError("provider field is required and must be a string") 
+        if "description" in api_data and api_data["description"] is not None:
             # if not :
             #     raise ValueError("description field must be a string or None")
-            api_data['description'] = str(api_data['description'])
+            api_data["description"] = str(api_data["description"])
         else:
-            api_data['description'] = None
-            
-        if 'tags' not in api_data:
-            api_data['tags'] = []
+            api_data["description"] = None
+
+        if "tags" not in api_data:
+            api_data["tags"] = []
         # elif not isinstance(api_data['tags'], list):
         #     raise ValueError("tags field must be a list")
         else:
             # Ensure all tags are strings
-            api_data['tags'] = [str(tag) for tag in api_data['tags']]
-        
+            api_data["tags"] = [str(tag) for tag in api_data["tags"]]
+
         # Handle both string and datetime objects for timestamp fields
-        created_at = api_data.get('created_at')
+        created_at = api_data.get("created_at")
         if isinstance(created_at, str):
-            api_data['created_at'] = datetime.fromisoformat(created_at)
+            api_data["created_at"] = datetime.fromisoformat(created_at)
         elif isinstance(created_at, datetime):
-            api_data['created_at'] = created_at
+            api_data["created_at"] = created_at
         else:
             raise ValueError(f"Invalid type for created_at: {type(created_at)}")
-            
-        updated_at = api_data.get('updated_at')
+
+        updated_at = api_data.get("updated_at")
         if isinstance(updated_at, str):
-            api_data['updated_at'] = datetime.fromisoformat(updated_at)
+            api_data["updated_at"] = datetime.fromisoformat(updated_at)
         elif isinstance(updated_at, datetime):
-            api_data['updated_at'] = updated_at
+            api_data["updated_at"] = updated_at
         else:
             raise ValueError(f"Invalid type for updated_at: {type(updated_at)}")
-            
+
         return APIKey(**api_data)
 
     def __init__(self, metadata_path: Optional[Path] = None):
@@ -92,10 +93,10 @@ class MetadataManager:
             api_key: APIKey object to save
         """
         metadata = self._load_all_metadata()
-        api_dict = api_key.model_dump(mode='python')
+        api_dict = api_key.model_dump(mode="python")
         # Convert datetime objects to strings for JSON serialization
-        api_dict['created_at'] = api_dict['created_at'].isoformat()
-        api_dict['updated_at'] = api_dict['updated_at'].isoformat()
+        api_dict["created_at"] = api_dict["created_at"].isoformat()
+        api_dict["updated_at"] = api_dict["updated_at"].isoformat()
         metadata[api_key.name] = api_dict  # type: ignore
         self._write_metadata(metadata)
 
@@ -146,7 +147,7 @@ class MetadataManager:
         metadata = self._load_all_metadata()
         return {name: self._metadata_to_api_key(data) for name, data in metadata.items()}
 
-    def filter_by_service(self, service: str) -> List[APIKey]:
+    def filter_by_service(self, provider: str) -> List[APIKey]:
         """
         Filter keys by service.
 
@@ -157,7 +158,7 @@ class MetadataManager:
             List of APIKey objects
         """
         all_metadata = self.list_all_metadata()
-        return [key for key in all_metadata.values() if key.service.lower() == service.lower()]
+        return [key for key in all_metadata.values() if key.provider.lower() == provider.lower()]
 
     def filter_by_tags(self, tags: List[str]) -> List[APIKey]:
         """
@@ -173,7 +174,8 @@ class MetadataManager:
         tags_lower = [t.lower() for t in tags]
 
         return [
-            key for key in all_metadata.values()
+            key
+            for key in all_metadata.values()
             if any(tag.lower() in tags_lower for tag in key.tags)
         ]
 
@@ -191,9 +193,10 @@ class MetadataManager:
         query_lower = query.lower()
 
         return [
-            key for key in all_metadata.values()
-            if query_lower in key.name.lower() or
-            (key.description and query_lower in key.description.lower())
+            key
+            for key in all_metadata.values()
+            if query_lower in key.name.lower()
+            or (key.description and query_lower in key.description.lower())
         ]
 
     def _load_all_metadata(self) -> Dict[str, MetadataDict]:
