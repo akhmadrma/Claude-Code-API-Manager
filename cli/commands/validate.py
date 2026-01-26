@@ -8,6 +8,29 @@ from typer import echo, Exit
 import typer
 from core.validators import ConfigValidator
 from core.export_manager import ExportClaudeSettings
+from pydantic import BaseModel, field_validator, ValidationError as PydanticValidationError
+
+
+class YesNoInput(BaseModel):
+    """Validate yes/no input (y/n, case-insensitive)."""
+    value: str
+
+    @field_validator('value')
+    @classmethod
+    def validate_yes_no(cls, v: str) -> str:
+        """Validate input is 'y' or 'n' (case-insensitive)."""
+        if v.lower() not in ['y', 'n']:
+            raise ValueError("Please enter 'y' or 'n'")
+        return v.lower()
+
+
+def _validate_yes_no(value: str) -> bool:
+    """Wrapper for Pydantic validation (returns True if valid)."""
+    try:
+        YesNoInput(value=value)
+        return True
+    except PydanticValidationError:
+        return False
 
 
 def validate_cmd(
@@ -37,12 +60,11 @@ def validate_cmd(
         answer = text(
             "Do you want to create a new settings file? (y/n): ",
             default="y",
-            # fixme : Type of parameter "x" is unknown
-            validate=lambda x: x.lower() in ["y", "n"],  #
+            validate=_validate_yes_no,
         ).ask()
         if answer == "y":
             # ConfigValidator.create_settings()
-            export: Path = ExportClaudeSettings().export_settings({}, backup=False)
+            export: Path = ExportClaudeSettings().export_settings("placeholder-api-key", backup=False)
             echo("✅ Settings file created in : " + str(export))
             raise Exit(code=0)
         else:

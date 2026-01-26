@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "capim"
+name = "capi"
 version = "0.1.0"
 description = "Interactive CLI tool for managing API keys with beautiful terminal UI"
 authors = ["akhmadrma"]

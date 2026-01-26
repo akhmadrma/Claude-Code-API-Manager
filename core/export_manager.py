@@ -28,9 +28,8 @@ class ExportClaudeSettings:
             settings_path or Path.home() / os.getenv("DEFAULT_CLAUDE_DIR", ".claude") / "settings.json"
         )
 
-    ## TODO replace default provider with anthropic
     def export_settings(
-        self, api_keys: str, provider: Provider = "anthropic", backup: bool = False
+        self, api_keys: str = "placeholder-api-key", provider: Provider = "anthropic", backup: bool = False
     ) -> Path:
         """
         Export API keys to Claude settings file.
@@ -112,7 +111,7 @@ class ExportClaudeSettings:
                 "ANTHROPIC_DEFAULT_SONNET_MODEL": env.anthropic_default_sonnet_model,
                 "ANTHROPIC_DEFAULT_OPUS_MODEL": env.anthropic_default_opus_model,
                 "ANTHROPIC_AUTH_TOKEN": env.anthropic_auth_token,
-                "ANTHROPIC_BASE_URL": env.anthropic_base_url.to_values(),
+                "ANTHROPIC_BASE_URL": base_url.to_values(),
                 "API_TIMEOUT_MS": env.api_timeout_ms,
                 "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": env.claude_code_disable_nonessential_traffic,
             },
@@ -207,7 +206,7 @@ class ExportManager:
         Returns:
             List of export command strings
         """
-        commands = []
+        commands: List[str] = []
         for name in key_names:
             env_name = prefix + name.upper() if prefix else name.upper()
             commands.append(self.export_single(name, env_name))
@@ -267,7 +266,7 @@ class ExportManager:
             service: Export by service
             all_keys: Export all keys
         """
-        commands = []
+        commands: List[str] = []
 
         if all_keys:
             commands = self.export_all()

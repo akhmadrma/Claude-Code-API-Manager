@@ -9,6 +9,7 @@ import typer
 from core.key_manager import KeyManager
 from core.metadata_manager import MetadataManager
 from core.export_manager import ExportClaudeSettings
+from core.models import APIKey
 from utils.helpers import mask_key
 
 console = Console()
@@ -39,7 +40,21 @@ def use_cmd(
         key_manager = KeyManager()
         export_manager = ExportClaudeSettings()
 
-        if interactive:
+        # Initialize variables with safe defaults (defensive programming)
+        key_metadata: Optional[APIKey] = None
+        key_value: Optional[str] = None
+
+        # Path 1: Name provided directly
+        if name:
+            key_metadata = metadata_manager.get_metadata(name)
+            key_value = key_manager.get_key_value(name)
+
+            if not key_metadata or not key_value:
+                console.print("[red]Key not found.[/red]")
+                return
+
+        # Path 2: Interactive mode
+        elif interactive:
             all_metadata = metadata_manager.list_all_metadata()
             if not all_metadata:
                 console.print(
@@ -85,46 +100,79 @@ def use_cmd(
             name = text(
                 "Enter the name of the key to use:",
                 instruction="(e.g., OPENAI_API_KEY)",
-                # TODO : Add validation
+                validate=_validate_name,
             ).ask()
             if not name:
                 console.print("[red]Cancelled[/red]")
                 return
 
-        if name:
+            # Fetch key details for interactive selection
             key_metadata = metadata_manager.get_metadata(name)
-            key_value: str = key_manager.get_key_value(name)
+            key_value = key_manager.get_key_value(name)
 
             if not key_metadata or not key_value:
                 console.print("[red]Key not found.[/red]")
                 return
 
-            # get active key
-            try:
-                previous_active_key = key_manager.get_active_key()
-                if previous_active_key.name == name:
-                    console.print("[red]Keys is already active.[/red]")
-                    return
-                previous_active_key = key_manager.set_inactive_key(previous_active_key.name)
-                metadata_manager.save_metadata(previous_active_key)
-
-            except KeyError:
-                previous_active_key = None
-            # deactife previous key
-
-            # actibate new key
-            current_active_key = key_manager.set_active_key(name)
-            metadata_manager.save_metadata(current_active_key)
-
-            exported_settings = export_manager.export_settings(key_value, key_metadata.provider)
-            if not exported_settings:
-                console.print("[red]Failed to export settings.[/red]")
-                return
-            console.print(f"[green]Successfully activated key {name}[/green]")
-
-        else:
-            console.print("[red]Key name not provided.[/red]")
+        # Safety check: Ensure we have the required data
+        if not key_value or not key_metadata:
+            console.print("[red]Key details not available. Please try again.[/red]")
             return
+
+        # At this point, name is guaranteed to be non-None due to the checks above
+        assert name is not None, "Name should be non-None after validation checks"
+
+        try:
+            # get active key
+            previous_active_key = key_manager.get_active_key()
+            if previous_active_key.name == name:
+                console.print("[red]Key is already active.[/red]")
+                return
+            # deactife previous key
+            previous_active_key = key_manager.set_inactive_key(previous_active_key.name)
+            metadata_manager.save_metadata(previous_active_key)
+
+        except KeyError:
+            previous_active_key = None
+
+        # actibate new key (moved outside except block)
+        current_active_key = key_manager.set_active_key(name)
+        metadata_manager.save_metadata(current_active_key)
+
+        exported_settings = export_manager.export_settings(key_value, key_metadata.provider)
+        if not exported_settings:
+            console.print("[red]Failed to export settings.[/red]")
+            return
+        console.print(f"[green]Successfully activated key {name}[/green]")
 
     except Exception as e:
         print(f"Error: {e}")
+
+
+def _validate_name(value: str) -> bool:
+    """
+    Validate API key name.
+
+    Args:
+        value: API key name to validate
+
+    Returns:
+        True if valid, False otherwise
+
+    Raises:
+        typer.Exit: If validation fails
+    """
+    if " " in value or "\t" in value or "\n" in value:
+        console.print(f"[red]Error: Key name cannot contain spaces or whitespace characters[/red]")
+        console.print(f"[yellow]Invalid name: '{value}'[/yellow]")
+        raise typer.Exit(1)
+
+    # Check if key already exists
+    key_manager = KeyManager()
+    result = key_manager.key_exists(value)
+
+    if not result:
+        console.print(f"[red]Key '{value}' not exists[/red]")
+        raise typer.Exit(1)
+
+    return True

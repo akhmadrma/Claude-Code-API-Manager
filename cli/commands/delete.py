@@ -35,16 +35,11 @@ def delete_cmd(
                 name = text(
                     "Enter the name of the key to delete:",
                     instruction="(e.g., OPENAI_API_KEY)",
-                    # TODO : Add validation
+                    validate=_validate_key_name,
                 ).ask()
                 if not name:
                     console.print("[red]Cancelled[/red]")
                     raise typer.Exit()
-
-        # Check if key exists
-        if not key_manager.key_exists(name):
-            console.print(f"[red]Key '{name}' not found[/red]")
-            raise typer.Exit(1)
 
         # Delete key
         if key_manager.delete_key(name):
@@ -61,6 +56,25 @@ def delete_cmd(
     except Exception as e:
         console.print(f"[red]Unexpected error: {e}[/red]")
         raise typer.Exit(1)
+
+
+def _validate_key_name(value: str) -> bool:
+
+    """
+    Validate key name by checking if it exists in storage.
+
+    Args:
+        value: The key name to validate
+
+    Returns:
+        True if the key exists, False otherwise
+    """
+    key_manager = KeyManager()
+    try:
+        key_manager.key_exists(value)
+        return True
+    except Exception:
+        return False
 
 
 if __name__ == "__main__":

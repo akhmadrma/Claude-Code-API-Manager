@@ -31,8 +31,6 @@ class KeyManager:
             self.env_path.touch(mode=0o600)
             # Set proper permissions
             os.chmod(self.env_path, 0o600)
-
-    # fixme pylint bug
     def add_key(
         self,
         name: str,

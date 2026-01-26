@@ -35,21 +35,18 @@ def add_cmd(
             console.print(Panel.fit("[bold cyan]Add New API Key[/bold cyan]"))
 
             # Prompt for key name
-            # TODO : Add validation for spacing, .env cannot have spaces
             if not name:
                 name = text(
                     "Enter a name for this key:",
-                    instruction="(e.g., OPENAI_API_KEY)",
-                    # TODO : Add validation
+                    instruction="ensure no spaces, TABs, or newlines",
+                    validate=_validate_name,
                 ).ask()
                 if not name:
                     console.print("[red]Cancelled[/red]")
                     raise typer.Exit()
-
-            # Check if key already exists
-            if key_manager.key_exists(name):
-                console.print(f"[red]Key '{name}' already exists[/red]")
-                raise typer.Exit(1)
+            else:
+                # Validate name if provided via argument
+                _validate_name(name)
 
             # Prompt for provider type
             if not provider:
@@ -87,6 +84,9 @@ def add_cmd(
                 )
                 raise typer.Exit(1)
 
+            # Validate name
+            _validate_name(name)
+
             # For now, we can't securely get the key value in non-interactive mode
             # without exposing it in shell history. This is a design decision.
             console.print(
@@ -99,11 +99,15 @@ def add_cmd(
 
         # Validate and add the key
         try:
+            # Validate provider is a valid Provider type
+            if provider not in PROVIDERS:
+                console.print(f"[red]Error: Invalid provider '{provider}'. Valid providers are: {', '.join(PROVIDERS)}[/red]")
+                raise typer.Exit(1)
+                
             api_key = key_manager.add_key(
                 name=name,
                 key_value=key_value,
-                ## fixme: Type "str" is not assignable to type "Provider"
-                provider=provider,
+                provider=provider,  # Provider is a TypeAlias for literal strings, no constructor needed
                 description=description,
                 tags=tags,
             )
@@ -133,6 +137,34 @@ def add_cmd(
     except Exception as e:
         console.print(f"[red]Unexpected error: {e}[/red]")
         raise typer.Exit(1)
+
+
+def _validate_name(value: str) -> bool:
+    """
+    Validate API key name to ensure it doesn't contain spaces.
+
+    Args:
+        value: The proposed name for the API key
+
+    Returns:
+        True if valid
+
+    Raises:
+        typer.Exit: If validation fails
+    """
+    # Check for spaces - .env files cannot have spaces in variable names
+    if " " in value or "\t" in value or "\n" in value:
+        console.print(f"[red]Error: Key name cannot contain spaces or whitespace characters[/red]")
+        console.print(f"[yellow]Invalid name: '{value}'[/yellow]")
+        raise typer.Exit(1)
+
+    # Check if key already exists
+    key_manager = KeyManager()
+    if key_manager.key_exists(value):
+        console.print(f"[red]Key '{value}' already exists[/red]")
+        raise typer.Exit(1)
+
+    return True
 
 
 if __name__ == "__main__":
