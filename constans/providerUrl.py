@@ -8,6 +8,7 @@ from .providers import Provider, PROVIDERS
 PROVIDER_URLS: Final[dict[Provider, str]] = {
     "anthropic": "https://api.anthropic.com",
     "glm": "https://api.z.ai/api/anthropic",
+    "kimi": "https://api.kimi.com/coding/",
 }
 
 

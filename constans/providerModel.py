@@ -14,6 +14,11 @@ PROVIDER_MODELS: Final[dict[Provider, list[str]]] = {
         "glm-4.6",
         "glm-4.7",
     ],
+    "kimi": [
+        "K2.5",
+        "K2.5",
+        "K2.5",
+    ],
 }
 
 
