@@ -28,27 +28,27 @@
 - **Update**: Modify existing API key values or metadata (implemented in core)
 - **Delete**: Remove API keys with confirmation prompts
 - **List**: Display all stored API keys in formatted table with filtering
-- **Use**: Interactive selection and activation of stored keys
+- **Use**: Interactive selection and activation of stored keys with merge/preview modes
 
 ### 2. Metadata Storage
 
 - Separate `keys_metadata.json` file for storing:
   - Key name (identifier)
-  - Provider type (Anthropic, GLM, etc.)
+  - Provider type (anthropic, glm, kimi)
   - Description (user-defined purpose)
   - Tags (for categorization)
-  - Active status (for key activation)
+  - Status (active/inactive)
   - Created timestamp
   - Updated timestamp
 - Enables rich display without exposing actual key values
 - Supports filtering and search functionality
-- Stored in `.capi/keys_metadata.json`
+- Stored in `~/.capi/keys_metadata.json`
 
 ### 3. Search and Filter
 
-- **Filter by Provider**: Display only keys for specific providers (--provider flag)
-- **Filter by Tags**: Search using custom tags (--tag flag)
-- **Text Search**: Find keys by name or description (--search flag)
+- **Filter by Provider**: Display only keys for specific providers (`--service` flag)
+- **Filter by Tags**: Search using custom tags (`--tag` flag)
+- **Text Search**: Find keys by name or description (`--search` flag)
 - Color-coded Display: Different colors for different provider types
 
 ### 4. Security Enhancement
@@ -57,18 +57,15 @@
   - Verify `.env` has 600 permissions (Unix/Linux)
   - Warn on overly permissive settings
   - Auto-fix option for incorrect permissions
-- **Git Safety**:
-  - Auto-generate `.gitignore` entries
-  - Check if `.env` is tracked in git
-  - Warning display if sensitive files detected in git
 - **Key Validation**:
   - Format validation before storage
   - Provider-specific pattern matching
 - **Secure Display**:
   - Masked key values in list view
-  - Optional reveal with confirmation
-- **STORAGE Encryption**:
-  - Stored in .capi/.env
+  - Only last 4 characters visible
+- **Secure Storage**:
+  - API keys stored in `~/.capi/.env` with 600 permissions
+  - Metadata stored separately from key values
 
 ### 5. Claude Code Integration
 
@@ -80,7 +77,7 @@
 
 - **Automatic Settings Creation**:
   - Generate settings.json with proper structure
-  - Support for multiple API providers (Anthropic, GLM)
+  - Support for multiple API providers (Anthropic, GLM, Kimi)
   - Pre-configured model mappings for each provider
   - Automatic backup before creating new settings
 
@@ -88,18 +85,19 @@
   - `constans/providers.py`: Provider type definitions
   - `constans/providerModel.py`: Model configurations per provider
   - `constans/providerUrl.py`: Base URL management for providers
-  - `constans/settings.py`: Settings structure validation
 
 - **Export Functionality**:
   - `ExportClaudeSettings`: Generate Claude-compatible settings.json
   - Backup support for existing settings
+  - Merge mode to preserve existing settings
+  - Preview mode to see changes before applying
   - Environment variable configuration
   - Model selection and configuration
 
 ## Project Structure
 
 ```
-capim/
+capi/
 ├── cli/
 │   ├── __init__.py
 │   ├── main.py                 # Typer app entry point
@@ -123,8 +121,7 @@ capim/
 │   ├── __init__.py
 │   ├── providers.py            # Provider type definitions
 │   ├── providerModel.py        # Model configurations per provider
-│   ├── providerUrl.py          # Base URL management
-│   └── settings.py             # Settings structure validation
+│   └── providerUrl.py          # Base URL management
 │
 ├── storage/
 │   ├── __init__.py
@@ -144,12 +141,11 @@ capim/
 ├── tests/
 │   └── __init__.py
 │
-├── .env                        # API keys storage (gitignored)
+├── .env.example                # Example environment file
 ├── .gitignore
 ├── pyproject.toml              # Dependencies and project config
 ├── README.md
-├── ARCHITECTURE.md             # This file
-└── PLANNING.md                 # Future features and roadmap
+└── ARCHITECTURE.md             # This file
 ```
 
 ## Data Models
@@ -159,18 +155,31 @@ capim/
 ```python
 class APIKey(BaseModel):
     name: str
-    provider: str
+    provider: Provider
     description: Optional[str]
     tags: List[str] = []
-    is_active: bool = False
+    status: str = "active"
     created_at: datetime
     updated_at: datetime
+```
+
+### Environment Model (Pydantic)
+
+```python
+class Environment(BaseModel):
+    anthropic_default_haiku_model: str
+    anthropic_default_sonnet_model: str
+    anthropic_default_opus_model: str
+    anthropic_auth_token: str
+    anthropic_base_url: BaseURL
+    api_timeout_ms: int
+    claude_code_disable_nonessential_traffic: bool
 ```
 
 ### Provider Models
 
 ```python
-Provider: TypeAlias = Literal["anthropic", "glm"]
+Provider: TypeAlias = Literal["anthropic", "glm", "kimi"]
 
 class Model(BaseModel):
     """Default model configurations for each provider."""
@@ -189,16 +198,18 @@ class BaseURL(BaseModel):
 
 ### Currently Implemented Commands
 
-- `capi add` - Add new API key (interactive)
-- `capi list [--provider PROVIDER] [--tag TAG] [--search TEXT]` - List keys with filters
-- `capi delete KEY_NAME` - Delete key
-- `capi use` - Interactive key selection and activation
-- `capi validate [--report]` - Validate Claude Code settings.json
-- `capi version` - Show version information
+| Command | Description | Options |
+|---------|-------------|---------|
+| `capi add` | Add new API key (interactive) | `--name`, `--provider`, `--interactive/--no-interactive` |
+| `capi list` | List keys with filters | `--service`, `--tag`, `--search` |
+| `capi delete KEY_NAME` | Delete key | `--name`, `--interactive/--no-interactive` |
+| `capi use` | Interactive key selection and activation | `--name`, `--interactive/--no-interactive`, `--merge`, `--preview` |
+| `capi validate` | Validate Claude Code settings.json | `--report` |
+| `capi version` | Show version information | - |
 
-### Note on Command Name
+### Command Name
 
-The CLI command is `capi` (not `cloudcode`) as defined in `pyproject.toml`:
+The CLI command is `capi` as defined in `pyproject.toml`:
 ```toml
 [tool.poetry.scripts]
 capi = "cli.main:app"
@@ -210,64 +221,80 @@ capi = "cli.main:app"
 
 1. User runs `capi add`
 2. Questionary prompts for:
-   - Key name
-   - Provider type (with autocomplete)
+   - Key name (validated - no spaces allowed)
+   - Provider type (with autocomplete: anthropic, glm, kimi)
    - API key value (masked input)
-   - Description
-   - Tags
+   - Description (optional)
+   - Tags (optional, comma-separated)
 3. Validation checks format
-4. Stores in `.env` and `keys_metadata.json`
+4. Stores in `~/.capi/.env` and `~/.capi/keys_metadata.json`
 5. Rich panel confirms successful addition
 
 ### Using an API Key
 
 1. User runs `capi use`
-2. Questionary displays filtered list of keys
-3. User selects key with arrow keys
-4. System activates the key by:
+2. Questionary displays filtered list of keys in a table
+3. User selects key with arrow keys or enters name
+4. If existing settings.json detected, prompts for:
+   - Merge - Preserve existing settings
+   - Overwrite - Replace all settings
+   - Preview - Show changes first
+   - Cancel - Exit without changes
+5. System activates the key by:
    - Deactivating previously active key
    - Marking selected key as active
    - Exporting Claude Code settings with the new key
-5. Success message displayed
+6. Success message displayed
+
+### Preview Mode
+
+1. User runs `capi use --preview` or selects "Preview" in interactive mode
+2. System shows:
+   - Which key would be deactivated/activated
+   - Fields to be added/modified/removed in settings.json
+   - Full resulting settings
+3. In interactive mode, prompts to apply changes or cancel
+4. No files are modified in preview mode
 
 ### Validating Claude Code Settings
 
 1. User runs `capi validate`
-2. System checks Claude Code installation
-3. Validates settings.json structure and environment variables
-4. If validation fails:
+2. System checks:
+   - Claude Code installation directory exists
+   - settings.json structure and environment variables
+3. If validation fails:
    - Prompts user to create new settings file
    - Generates proper settings.json with defaults
-   - Backs up existing settings if present
-5. Reports validation status with clear pass/fail indicators
+4. Reports validation status with clear pass/fail indicators
 
 ## Security Considerations
 
 ### File Permissions
 
-- `.env` must be 600 (owner read/write only)
-- `keys_metadata.json` must be 600
-- `settings.json` must be 600
+- `~/.capi/.env` must be 600 (owner read/write only)
+- `~/.capi/keys_metadata.json` must be 600
+- `~/.claude/settings.json` should be 600
 - Claude Code settings protected with automatic backup
-
-### Git Safety
-
-- Auto-add `.env` and `keys_metadata.json` to `.gitignore`
-- Check git status on startup
-- Warn if sensitive files are tracked
 
 ### Key Display
 
-- Default masked display (e.g., `sk-***...***xyz`)
-- Require confirmation to reveal full key
+- Default masked display (e.g., `************xyz` - only last 4 chars visible)
+- No reveal option currently implemented
 - Clear screen after displaying sensitive data
+
+### Storage Security
+
+- API keys stored separately from metadata
+- Keys in `~/.capi/.env`, metadata in `~/.capi/keys_metadata.json`
+- Both files created with 600 permissions
+- Parent directory `~/.capi/` created with secure permissions
 
 ## Dependencies (pyproject.toml)
 
 ```toml
 [tool.poetry.dependencies]
 python = "^3.9"
-typer = "^0.21.0"
+typer = { version = "^0.21.0", extras = ["all"]}
 rich = "^13.7.0"
 questionary = "^2.0.0"
 python-dotenv = "^1.0.0"
@@ -289,11 +316,15 @@ The tool comes with pre-configured support for:
 
 1. **Anthropic**
    - Base URL: `https://api.anthropic.com`
-   - Models: claude-3-haiku, claude-3.5-sonnet, claude-3-opus
+   - Models: claude-3-haiku-20240307, claude-3-5-sonnet-20241022, claude-3-opus-20240229
 
 2. **GLM (Zhipu AI)**
-   - Base URL: `https://open.bigmodel.cn/api/paas/v4/`
+   - Base URL: `https://api.z.ai/api/anthropic`
    - Models: glm-4.5, glm-4.6, glm-4.7
+
+3. **Kimi**
+   - Base URL: `https://api.kimi.com/coding/`
+   - Models: K2.5
 
 ### Adding New Providers
 
@@ -309,9 +340,9 @@ To add a new provider:
 ### Installation
 
 ```bash
-pip install capim
+pip install capi
 # or
-pipx install capim
+pipx install capi
 ```
 
 ### Quick Start
@@ -324,12 +355,18 @@ capi add
 capi list
 
 # List keys with filters
-capi list --provider anthropic
+capi list --service anthropic
 capi list --tag production
 capi list --search "github"
 
 # Use a key
 capi use
+
+# Use with merge mode
+capi use --merge
+
+# Preview changes
+capi use --preview
 
 # Validate Claude Code settings
 capi validate
@@ -352,9 +389,21 @@ capi validate
 # - Automatic backup of existing settings
 ```
 
+## Storage Locations
+
+| File | Location | Purpose |
+|------|----------|---------|
+| API Keys | `~/.capi/.env` | Secure storage of API key values |
+| Metadata | `~/.capi/keys_metadata.json` | Key metadata (name, provider, tags, etc.) |
+| Claude Settings | `~/.claude/settings.json` | Claude Code configuration (or path from DEFAULT_CLAUDE_DIR env var) |
+| Settings Backups | `~/.claude/settings.backup.*.json` | Automatic backups of settings.json |
+
+## Environment Variables
+
+The following environment variables can be configured in `~/.capi/.env`:
+
+- `DEFAULT_CLAUDE_DIR`: Custom path to Claude Code settings directory (default: `~/.claude`)
 
 ## License
 
 MIT License
-
-
