@@ -1,6 +1,7 @@
+import json
 from typing import Optional
 
-from questionary import text
+from questionary import select, text, Choice
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -20,6 +21,12 @@ def use_cmd(
     interactive: bool = typer.Option(
         True, "--interactive/--no-interactive", help="Interactive mode (default: True)"
     ),
+    merge: bool = typer.Option(
+        False, "--merge", help="Merge with existing settings instead of replacing (default: False)"
+    ),
+    preview: bool = typer.Option(
+        False, "--preview/--no-preview", help="Preview changes without writing (default: False)"
+    ),
 ):
     """
     Use a stored API key to generate a valid Claude Code settings.json file.
@@ -32,6 +39,8 @@ def use_cmd(
 
     :param name: Name of the key to use
     :param interactive: Interactive mode (default: True)
+    :param merge: Merge with existing settings instead of replacing
+    :param preview: Preview changes without writing to disk
     :raises typer.Exit: If key not found or cancelled
     :raises Exception: If failed to export settings
     """
@@ -122,6 +131,138 @@ def use_cmd(
         # At this point, name is guaranteed to be non-None due to the checks above
         assert name is not None, "Name should be non-None after validation checks"
 
+        # Interactive merge/overwrite prompt (only in interactive mode)
+        # Prompt when: settings.json exists AND no --merge flag provided
+        interactive_preview: bool = False  # Track if preview was triggered interactively
+        if (
+            interactive
+            and not merge
+            and export_manager.settings_path.exists()
+        ):
+            choice = select(
+                "Existing settings.json detected. How would you like to proceed?",
+                choices=[
+                    Choice("Merge - Preserve existing settings", "merge"),
+                    Choice("Overwrite - Replace all settings", "overwrite"),
+                    Choice("Preview - Show changes first", "preview"),
+                    Choice("Cancel - Exit without changes", "cancel"),
+                ],
+            ).ask()
+
+            if choice == "cancel":
+                console.print("[yellow]Cancelled.[/yellow]")
+                return
+            elif choice == "merge":
+                merge = True
+            elif choice == "preview":
+                preview = True
+                interactive_preview = True  # Mark as interactive preview
+            # else: overwrite (default, merge=False)
+
+        # Export settings with merge/preview support
+        result = export_manager.export_settings(
+            key_value, key_metadata.provider, merge=merge, preview=preview
+        )
+
+        # Handle preview mode BEFORE making any metadata changes
+        if preview:
+            # Show preview of changes (BEFORE making any actual changes)
+            from rich.json import JSON
+
+            console.print(Panel.fit("[bold cyan]Settings Preview[/bold cyan]"))
+
+            # Show what metadata changes would occur
+            try:
+                previous_active_key = key_manager.get_active_key()
+                if previous_active_key.name != name:
+                    console.print(
+                        f"[dim]Would deactivate: [cyan]{previous_active_key.name}[/cyan][/dim]"
+                    )
+                    console.print(f"[dim]Would activate: [cyan]{name}[/cyan][/dim]\n")
+                else:
+                    console.print(f"[dim]Key [cyan]{name}[/cyan] is already active.[/dim]\n")
+            except KeyError:
+                console.print(
+                    f"[dim]Would activate: [cyan]{name}[/cyan] (no currently active key)\n"
+                )
+
+            if isinstance(result, dict):
+                if result["before"] is None:
+                    console.print(
+                        "[yellow]No existing settings.json file found.[/yellow]"
+                    )
+                    console.print("\n[bold]New settings to be created:[/bold]")
+                    console.print(JSON(json.dumps(result["after"], indent=2)))
+                else:
+                    changes = result["changes"]
+
+                    if changes["type"] == "update":
+                        if changes["added"]:
+                            console.print(
+                                "\n[bold green]Fields to be added:[/bold green]"
+                            )
+                            console.print(JSON(json.dumps(changes["added"], indent=2)))
+
+                        if changes["modified"]:
+                            console.print(
+                                "\n[bold yellow]Fields to be modified:[/bold yellow]"
+                            )
+                            for key_key, diff in changes["modified"].items():
+                                console.print(f"  [cyan]{key_key}[/cyan]:")
+                                console.print(f"    [red]- {diff['old']}[/red]")
+                                console.print(f"    [green]+ {diff['new']}[/green]")
+
+                        if changes["removed"]:
+                            console.print(
+                                "\n[bold red]Fields to be removed:[/bold red]"
+                            )
+                            console.print(
+                                JSON(json.dumps(changes["removed"], indent=2))
+                            )
+
+                        if (
+                            not changes["added"]
+                            and not changes["modified"]
+                            and not changes["removed"]
+                        ):
+                            console.print("[dim]No changes detected.[/dim]")
+
+                    console.print("\n[bold]Full resulting settings:[/bold]")
+                    console.print(JSON(json.dumps(result["after"], indent=2)))
+
+            console.print("\n[dim]Preview mode - no files were modified.[/dim]")
+
+            # If preview was triggered interactively, ask for confirmation
+            if interactive_preview:
+                confirm_choice = select(
+                    "What would you like to do?",
+                    choices=[
+                        Choice("Apply changes (merge mode)", "merge"),
+                        Choice("Apply changes (overwrite mode)", "overwrite"),
+                        Choice("Cancel - Exit without changes", "cancel"),
+                    ],
+                ).ask()
+
+                if confirm_choice == "cancel":
+                    console.print("[yellow]Cancelled.[/yellow]")
+                    return
+                elif confirm_choice == "merge":
+                    merge = True
+                # else: overwrite (default, merge=False)
+
+                # Continue with export (don't return)
+                # Need to call export_settings again with the correct merge flag
+                result = export_manager.export_settings(
+                    key_value, key_metadata.provider, merge=merge, preview=False
+                )
+            else:
+                # CLI --preview flag: show message and exit
+                console.print(
+                    "[dim]Run again without --preview to apply changes.[/dim]"
+                )
+                return
+
+        # Not preview mode - apply metadata changes
         try:
             # get active key
             previous_active_key = key_manager.get_active_key()
@@ -139,10 +280,10 @@ def use_cmd(
         current_active_key = key_manager.set_active_key(name)
         metadata_manager.save_metadata(current_active_key)
 
-        exported_settings = export_manager.export_settings(key_value, key_metadata.provider)
-        if not exported_settings:
+        if not result:
             console.print("[red]Failed to export settings.[/red]")
             return
+
         console.print(f"[green]Successfully activated key {name}[/green]")
 
     except Exception as e:

@@ -5,7 +5,7 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from constans.providerModel import Model
 from constans.providerUrl import Provider
@@ -29,17 +29,25 @@ class ExportClaudeSettings:
         )
 
     def export_settings(
-        self, api_keys: str = "placeholder-api-key", provider: Provider = "anthropic", backup: bool = False
-    ) -> Path:
+        self,
+        api_keys: str = "placeholder-api-key",
+        provider: Provider = "anthropic",
+        backup: bool = False,
+        merge: bool = False,
+        preview: bool = False,
+    ) -> Union[Path, Dict[str, Any]]:
         """
         Export API keys to Claude settings file.
 
         Args:
             api_keys: Dictionary of API keys to export
+            provider: API provider to use
             backup: Whether to backup existing settings before export
+            merge: Whether to merge with existing settings instead of replacing
+            preview: If True, return diff without writing to disk
 
         Returns:
-            Path to the exported settings file
+            Path to the exported settings file, or dict with preview data if preview=True
 
         Raises:
             IOError: If export fails
@@ -47,17 +55,30 @@ class ExportClaudeSettings:
         # Ensure directory exists
         self.settings_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Load existing settings if merge mode is enabled
+        existing_settings = self._load_existing_settings() if merge else None
+
+        # Prepare new settings data
+        new_settings = self._prepare_settings(api_keys, provider)
+
+        # Merge with existing settings if merge mode is enabled
+        if merge and existing_settings:
+            final_settings = self._deep_merge(existing_settings, new_settings)
+        else:
+            final_settings = new_settings
+
+        # Generate preview if requested
+        if preview:
+            return self._generate_diff(existing_settings, final_settings)
+
         # Backup existing settings if requested and file exists
         if backup and self.settings_path.exists():
             self._backup_settings()
 
-        # Prepare settings data
-        settings_data = self._prepare_settings(api_keys, provider)
-
         # Write to file
         try:
             with open(self.settings_path, "w", encoding="utf-8") as f:
-                json.dump(settings_data, f, indent=2)
+                json.dump(final_settings, f, indent=2)
             return self.settings_path
         except Exception as e:
             raise IOError(f"Failed to export Claude settings: {e}") from e
@@ -119,6 +140,108 @@ class ExportClaudeSettings:
         }
 
         return settings_dict
+
+    def _load_existing_settings(self) -> Optional[Dict[str, Any]]:
+        """
+        Load existing settings from file.
+
+        Returns:
+            Existing settings dictionary, or None if file doesn't exist
+
+        Raises:
+            IOError: If file exists but contains invalid JSON
+        """
+        if not self.settings_path.exists():
+            return None
+
+        try:
+            with open(self.settings_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError as e:
+            raise IOError(
+                f"Existing settings file contains invalid JSON: {e}. "
+                f"Please fix or remove {self.settings_path} before proceeding."
+            ) from e
+        except Exception as e:
+            raise IOError(f"Failed to load existing settings: {e}") from e
+
+    def _deep_merge(self, base: Dict[str, Any], update: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Recursively merge two dictionaries.
+
+        Values from 'update' take precedence over values from 'base'.
+        Nested dictionaries are merged recursively.
+
+        Args:
+            base: Base dictionary (existing settings)
+            update: Update dictionary (new settings to apply)
+
+        Returns:
+            Merged dictionary
+        """
+        result = base.copy()
+
+        for key, value in update.items():
+            # If both values are dicts, merge them recursively
+            if (
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(value, dict)
+            ):
+                result[key] = self._deep_merge(result[key], value)
+            else:
+                # Otherwise, the new value wins (replace or add)
+                result[key] = value
+
+        return result
+
+    def _generate_diff(
+        self, before: Optional[Dict[str, Any]], after: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Generate a diff showing changes between before and after states.
+
+        Args:
+            before: Settings before changes (may be None)
+            after: Settings after changes
+
+        Returns:
+            Dictionary with 'before', 'after', and 'changes' keys
+        """
+        changes: Dict[str, Any] = {}
+
+        if before is None:
+            # No existing file, all changes are additions
+            changes = {"type": "create", "added": after}
+        else:
+            # Calculate what changed
+            added: Dict[str, Any] = {}
+            modified: Dict[str, Any] = {}
+            removed: Dict[str, Any] = {}
+
+            # Find added and modified keys
+            all_keys = set(before.keys()) | set(after.keys())
+
+            for key in all_keys:
+                if key not in before:
+                    added[key] = after[key]
+                elif key not in after:
+                    removed[key] = before[key]
+                elif before[key] != after[key]:
+                    modified[key] = {"old": before[key], "new": after[key]}
+
+            changes = {
+                "type": "update",
+                "added": added,
+                "modified": modified,
+                "removed": removed,
+            }
+
+        return {
+            "before": before,
+            "after": after,
+            "changes": changes,
+        }
 
     def list_backups(self) -> List[Path]:
         """
