@@ -17,18 +17,30 @@ Interactive CLI tool for managing API keys with beautiful terminal UI and Claude
 
 ## Installation
 
+Prerequisites: Python 3.9+ and pip.
+
+Option A: Install from source (recommended for development)
+
 ```bash
-# Build the distribution with Poetry
-poetry build
+git clone https://github.com/akhmadrma/Claude-Code-API-Manager.git
+cd Claude-Code-API-Manager
+python -m pip install --upgrade pip
+python -m pip install .
+```
 
-# Change into the dist directory where wheels are created
-cd dist
+Option B: SSH clone (if you prefer SSH)
 
-# Install the wheel file produced by the build
-# The wheel name corresponds to the project version, e.g., capi-0.1.1-py3-none-any.whl
-pip install capi-0.1.1-py3-none-any.whl
+```bash
+git clone git@github.com:akhmadrma/Claude-Code-API-Manager.git
+cd Claude-Code-API-Manager
+python -m pip install --upgrade pip
+python -m pip install .
+```
 
-# After installation, the CLI entry point should be available as `capi`
+
+After installation, the CLI entry point should be available as capi:
+
+```bash
 capi --help
 ```
 
