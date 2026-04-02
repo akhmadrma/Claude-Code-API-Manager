@@ -18,9 +18,18 @@ Interactive CLI tool for managing API keys with beautiful terminal UI and Claude
 ## Installation
 
 ```bash
-pip install capi
-# or
-pipx install capi
+# Build the distribution with Poetry
+poetry build
+
+# Change into the dist directory where wheels are created
+cd dist
+
+# Install the wheel file produced by the build
+# The wheel name corresponds to the project version, e.g., capi-0.1.1-py3-none-any.whl
+pip install capi-0.1.1-py3-none-any.whl
+
+# After installation, the CLI entry point should be available as `capi`
+capi --help
 ```
 
 ## Quick Start
