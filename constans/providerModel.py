@@ -5,19 +5,19 @@ from .providers import Provider
 
 PROVIDER_MODELS: Final[dict[Provider, list[str]]] = {
     "anthropic": [
-        "claude-3-haiku-20240307",
-        "claude-3-5-sonnet-20241022",
-        "claude-3-opus-20240229",
+        "claude-3-5-haiku-20241015",  #Latest Haiku (3.5)
+        "claude-sonnet-4-6", #Latest Sonnet (3.5)
+        "claude-opus-4-6",     #Latest Opus (3.0)
     ],
     "glm": [
-        "glm-4.5",
-        "glm-4.6",
-        "glm-4.7",
+        "glm-4.6", #Haiku model
+        "glm-4.7", #Sonnet model
+        "glm-5.0", #Opus model
     ],
     "kimi": [
-        "K2.5",
-        "K2.5",
-        "K2.5",
+        "kimi-k2.5", #Haiku model
+        "kimi-k2.5", #Sonnet model
+        "kimi-k2-thinking", #Opus model
     ],
 }
 
